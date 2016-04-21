@@ -1,0 +1,57 @@
+#
+# Renesas device configuration
+#
+
+menuconfig AVB_STREAMING
+	bool "AVB Streaming"
+	depends on RAVB
+	default y
+	---help---
+	  This option enable following features.
+		- Renesas Ethernet AVB Streaming APIs.
+		- Renesas Ethernet AVB Streaming APIs debug extention.
+		- Renesas Ethernet AVB extended statistics.
+
+if AVB_STREAMING
+
+config RAVB_STREAMING
+	tristate "Ethernet AVB Streaming API support"
+	depends on RAVB
+	default m
+	---help---
+	  Renesas Ethernet AVB device driver.
+	  Say 'Y' or 'M' to enable Ethernet AVB Streaming APIs.
+	  This driver supports the following SoCs:
+		- R8A7795.
+
+config RAVB_STREAMING_FTRACE_DESC
+	bool "Enable descriptor tracing in AVB Streaming API"
+	depends on RAVB_STREAMING && FUNCTION_TRACER
+	default n
+	---help---
+	  Debug extension in the Ethernet AVB Streaming APIs.
+	  Say 'Y' to enable the descriptor tracing, and driver
+	  output the descriptor information to kernel tracer.
+	  Say 'N', only basic trace information is enable.
+
+config RAVB_STREAMING_FTRACE_LOCK
+	bool "Enable lock tracing in AVB Streaming API"
+	depends on RAVB_STREAMING && FUNCTION_TRACER
+	default n
+	---help---
+	  Debug extension in the Ethernet AVB Streaming APIs.
+	  Say 'Y' to enable the lock tracing, and driver
+	  output the lock state to kernel tracer.
+	  Say 'N', only basic trace information is enable.
+
+config RAVB_EXT_STATS
+	tristate "Enable extended statistics"
+	depends on RAVB_STREAMING
+	default m
+	---help---
+	  Enable the extended statistics in the Renesas Ethernet AVB
+	  device driver. This is useful for show statistics in one list.
+	  /proc/avb/network shows the network statistics.
+	  /proc/avb/hw shows the hardware information of Ethernet AVB.
+
+endif #AVB_STREAMING
