@@ -352,7 +352,8 @@ out:
 static long ravb_avbtool_get_stats(struct file *file, unsigned long parm)
 {
 	struct streaming_private *stp = stp_ptr;
-	struct stqueue_info *stq = file->private_data;
+	struct ravb_streaming_kernel_if *kif = file->private_data;
+	struct stqueue_info *stq;
 	void __user *useraddr = (void __user *)parm;
 	struct eavb_avbtool_stats stats;
 	struct packet_stats pstats;
@@ -360,6 +361,11 @@ static long ravb_avbtool_get_stats(struct file *file, unsigned long parm)
 	u64 *data;
 	int i = 0, n_stats = EAVB_AVBTOOL_STATS_LEN;
 	long err = 0;
+
+	if (!kif)
+		stq = NULL;
+	else
+		stq = kif->handle;
 
 	pr_debug("get_stats: %s\n", (stq) ? stq_name(stq) : stp_name(stp));
 
