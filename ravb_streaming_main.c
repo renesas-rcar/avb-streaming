@@ -104,6 +104,7 @@
 #define DEBUG_AVB_CACHESYNC (0)
 
 #define AVB_CTRL_MINOR (127)
+#define AVB_MINOR_RANGE (AVB_CTRL_MINOR + 1)
 
 /**
  * global parameters
@@ -2581,10 +2582,10 @@ static int ravb_streaming_init(void)
 	if (major) {
 		stp->dev = MKDEV(major, 0);
 		err = register_chrdev_region(stp->dev,
-				AVB_CTRL_MINOR+1, "avb");
+				AVB_MINOR_RANGE, "avb");
 	} else {
 		err = alloc_chrdev_region(&stp->dev, 0,
-				AVB_CTRL_MINOR+1, "avb");
+				AVB_MINOR_RANGE, "avb");
 	}
 
 	if (err < 0) {
@@ -2596,7 +2597,7 @@ static int ravb_streaming_init(void)
 	cdev_init(&stp->cdev, &ravb_streaming_fops);
 	stp->cdev.owner = THIS_MODULE;
 
-	err = cdev_add(&stp->cdev, stp->dev, AVB_CTRL_MINOR+1);
+	err = cdev_add(&stp->cdev, stp->dev, AVB_MINOR_RANGE);
 	if (err) {
 		pr_err("init: failed to add avb device\n");
 		goto no_register;
@@ -2802,7 +2803,7 @@ static void ravb_streaming_cleanup(void)
 
 	pr_info("cleanup: start\n");
 
-	unregister_chrdev_region(stp->dev, RAVB_HWQUEUE_NUM);
+	unregister_chrdev_region(stp->dev, AVB_MINOR_RANGE);
 	cdev_del(&stp->cdev);
 
 	/* cleanup hwqueue info */
