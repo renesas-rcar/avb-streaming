@@ -526,7 +526,7 @@ static int stats_show_network_phy(struct seq_file *m, void *v)
 	struct ravb_proc_info_t *info = &ravb_proc_info;
 	struct net_device *ndev = info->ndev;
 	struct ravb_private *priv = netdev_priv(ndev);
-	struct phy_device *phydev = priv->phydev;
+	struct phy_device *phydev = ndev->phydev;
 
 	seq_printf(m,
 		"Link:      %s\n"
