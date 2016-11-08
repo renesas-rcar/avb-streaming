@@ -991,6 +991,36 @@ static long ravb_get_entrynum_kernel(void *handle,
 }
 
 /* This API can be called from only the kernel driver */
+static long ravb_get_linkspeed(void *handle)
+{
+	struct stqueue_info *stq = handle;
+	struct hwqueue_info *hwq;
+	struct streaming_private *stp;
+	struct net_device *ndev;
+	struct ravb_private *priv;
+
+	if (!stq)
+		return -EINVAL;
+
+	hwq = stq->hwq;
+	stp = to_stp(hwq->device.parent);
+	ndev = to_net_dev(stp->device.parent);
+	priv = netdev_priv(ndev);
+
+	if (!priv->link) {
+		pr_debug("netdev priv->link is 0\n");
+		return 0;
+	}
+
+	if (!netif_running(ndev)) {
+		pr_debug("netif_running() return  0\n");
+		return 0;
+	}
+
+	return (long)priv->speed;
+}
+
+/* This API can be called from only the kernel driver */
 static long ravb_blocking_cancel_kernel(void *handle)
 {
 	struct stqueue_info *stq = handle;
@@ -1428,6 +1458,7 @@ int ravb_streaming_open_stq_kernel(enum AVB_DEVNAME dev_name,
 	kif->set_option = &ravb_set_option_kernel;
 	kif->get_option = &ravb_get_option_kernel;
 	kif->get_entrynum = &ravb_get_entrynum_kernel;
+	kif->get_linkspeed = &ravb_get_linkspeed;
 	kif->blocking_cancel = &ravb_blocking_cancel_kernel;
 
 	stq->flags = flags;

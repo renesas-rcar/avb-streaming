@@ -103,6 +103,7 @@ struct ravb_streaming_kernel_if {
 	long (*set_option)(void *handle, struct eavb_option *option);
 	long (*get_option)(void *handle, struct eavb_option *option);
 	long (*get_entrynum)(void *handle, struct eavb_entrynum *entrynum);
+	long (*get_linkspeed)(void *handle);
 	long (*blocking_cancel)(void *handle);
 };
 
