@@ -63,6 +63,6 @@
 #define __RAVB_STREAMING_VERSION_H__
 
 #define DRIVER "ravb-streaming"
-#define DRIVER_VERSION "R-Car v2.5.0"
+#define DRIVER_VERSION "R-Car v2.6.0"
 
 #endif	/* __RAVB_STREAMING_VERSION_H__ */
