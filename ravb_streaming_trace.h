@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2016 Renesas Electronics Corporation
+ Copyright (C) 2014-2017 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
@@ -229,31 +229,31 @@ TRACE_EVENT(avb_entry_accept,
 
 #define show_avb_dts(dt) \
 	__print_symbolic(dt, \
-		{ 5,	"FSTART" }, \
-		{ 4,	"FMID" }, \
-		{ 6,	"FEND" }, \
-		{ 7,	"FSINGLE" }, \
-		{ 8,	"LINK" }, \
-		{ 9,	"LINKFIX" }, \
-		{ 10,	"EOS" }, \
-		{ 12,	"FEMPTY" }, \
-		{ 13,	"FEMPTY_IS" }, \
-		{ 14,	"FEMPTY_IC" }, \
-		{ 15,	"FEMPTY_ND" }, \
-		{ 2,	"LEMPTY" }, \
-		{ 3,	"EEMPTY" })
+		{ 0x40,	"FMID" }, \
+		{ 0x50,	"FSTART" }, \
+		{ 0x60,	"FEND" }, \
+		{ 0x70,	"FSINGLE" }, \
+		{ 0x80,	"LINK" }, \
+		{ 0x90,	"LINKFIX" }, \
+		{ 0xa0,	"EOS" }, \
+		{ 0xc0,	"FEMPTY" }, \
+		{ 0xd0,	"FEMPTY_IS" }, \
+		{ 0xe0,	"FEMPTY_IC" }, \
+		{ 0xf0,	"FEMPTY_ND" }, \
+		{ 0x20,	"LEMPTY" }, \
+		{ 0x30,	"EEMPTY" })
 
 TRACE_EVENT(avb_desc,
-	TP_PROTO(s32 index, int stqno, void *e, void *desc, u32 dt,
+	TP_PROTO(s32 index, int stqno, void *e, void *desc, u32 die_dt,
 		 u32 dptr, u32 ds, bool en, bool tx),
-	TP_ARGS(index, stqno, e, desc, dt, dptr, ds, en, tx),
+	TP_ARGS(index, stqno, e, desc, die_dt, dptr, ds, en, tx),
 
 	TP_STRUCT__entry(
 		__field(s32,	index)
 		__field(int,	stqno)
 		__field(void *,	e)
 		__field(void *,	desc)
-		__field(u32,	dt)
+		__field(u32,	die_dt)
 		__field(u32,	dptr)
 		__field(u32,	ds)
 		__field(bool,	en)
@@ -264,33 +264,34 @@ TRACE_EVENT(avb_desc,
 		__entry->stqno	= stqno;
 		__entry->e	= e;
 		__entry->desc	= desc;
-		__entry->dt	= dt;
+		__entry->die_dt	= die_dt;
 		__entry->dptr	= dptr;
 		__entry->ds	= ds;
 		__entry->en	= en;
 		__entry->tx	= tx;
 	),
-	TP_printk("hwq.%d.%d: %p desc.%s.%s %p %s 0x%08x %d",
+	TP_printk("hwq.%d.%d: %p desc.%s.%s %p %d %s 0x%08x %d",
 		  __entry->index,
 		  __entry->stqno,
 		  __entry->e,
 		  __entry->en ? "en" : "de",
 		  __entry->tx ? "tx" : "rx",
 		  __entry->desc,
-		  show_avb_dts(__entry->dt),
+		  __entry->die_dt & 0x0f,
+		  show_avb_dts(__entry->die_dt & 0xf0),
 		  __entry->dptr,
 		  __entry->ds)
 );
 #endif
 
-#define trace_avb_desc_encode_rx(index, stqno, e, desc, dt, dptr, ds) \
-	trace_avb_desc(index, stqno, e, desc, dt, dptr, ds, 1, 0)
-#define trace_avb_desc_encode_tx(index, stqno, e, desc, dt, dptr, ds) \
-	trace_avb_desc(index, stqno, e, desc, dt, dptr, ds, 1, 1)
-#define trace_avb_desc_decode_rx(index, stqno, e, desc, dt, dptr, ds) \
-	trace_avb_desc(index, stqno, e, desc, dt, dptr, ds, 0, 0)
-#define trace_avb_desc_decode_tx(index, stqno, e, desc, dt, dptr, ds) \
-	trace_avb_desc(index, stqno, e, desc, dt, dptr, ds, 0, 1)
+#define trace_avb_desc_encode_rx(index, stqno, e, desc, die_dt, dptr, ds) \
+	trace_avb_desc(index, stqno, e, desc, die_dt, dptr, ds, 1, 0)
+#define trace_avb_desc_encode_tx(index, stqno, e, desc, die_dt, dptr, ds) \
+	trace_avb_desc(index, stqno, e, desc, die_dt, dptr, ds, 1, 1)
+#define trace_avb_desc_decode_rx(index, stqno, e, desc, die_dt, dptr, ds) \
+	trace_avb_desc(index, stqno, e, desc, die_dt, dptr, ds, 0, 0)
+#define trace_avb_desc_decode_tx(index, stqno, e, desc, die_dt, dptr, ds) \
+	trace_avb_desc(index, stqno, e, desc, die_dt, dptr, ds, 0, 1)
 
 #if !defined(CONFIG_RAVB_STREAMING_FTRACE_LOCK)
 #define trace_avb_lock(a, b, c, d)
