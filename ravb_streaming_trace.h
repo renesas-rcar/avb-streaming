@@ -244,15 +244,15 @@ TRACE_EVENT(avb_entry_accept,
 		{ 3,	"EEMPTY" })
 
 TRACE_EVENT(avb_desc,
-	TP_PROTO(s32 index, int stqno, u32 e, u32 desc, u32 dt,
+	TP_PROTO(s32 index, int stqno, void *e, void *desc, u32 dt,
 		 u32 dptr, u32 ds, bool en, bool tx),
 	TP_ARGS(index, stqno, e, desc, dt, dptr, ds, en, tx),
 
 	TP_STRUCT__entry(
 		__field(s32,	index)
 		__field(int,	stqno)
-		__field(u32,	e)
-		__field(u32,	desc)
+		__field(void *,	e)
+		__field(void *,	desc)
 		__field(u32,	dt)
 		__field(u32,	dptr)
 		__field(u32,	ds)
@@ -270,27 +270,27 @@ TRACE_EVENT(avb_desc,
 		__entry->en	= en;
 		__entry->tx	= tx;
 	),
-	TP_printk("hwq.%d.%d: 0x%08x desc.%s.%s 0x%08x %s 0x%08x %d",
-		__entry->index,
-		__entry->stqno,
-		__entry->e,
-		__entry->en ? "en" : "de",
-		__entry->tx ? "tx" : "rx",
-		__entry->desc,
-		show_avb_dts(__entry->dt),
-		__entry->dptr,
-		__entry->ds)
+	TP_printk("hwq.%d.%d: %p desc.%s.%s %p %s 0x%08x %d",
+		  __entry->index,
+		  __entry->stqno,
+		  __entry->e,
+		  __entry->en ? "en" : "de",
+		  __entry->tx ? "tx" : "rx",
+		  __entry->desc,
+		  show_avb_dts(__entry->dt),
+		  __entry->dptr,
+		  __entry->ds)
 );
 #endif
 
 #define trace_avb_desc_encode_rx(index, stqno, e, desc, dt, dptr, ds) \
-	trace_avb_desc(index, stqno, (u32)e, (u32)desc, dt, dptr, ds, 1, 0)
+	trace_avb_desc(index, stqno, e, desc, dt, dptr, ds, 1, 0)
 #define trace_avb_desc_encode_tx(index, stqno, e, desc, dt, dptr, ds) \
-	trace_avb_desc(index, stqno, (u32)e, (u32)desc, dt, dptr, ds, 1, 1)
+	trace_avb_desc(index, stqno, e, desc, dt, dptr, ds, 1, 1)
 #define trace_avb_desc_decode_rx(index, stqno, e, desc, dt, dptr, ds) \
-	trace_avb_desc(index, stqno, (u32)e, (u32)desc, dt, dptr, ds, 0, 0)
+	trace_avb_desc(index, stqno, e, desc, dt, dptr, ds, 0, 0)
 #define trace_avb_desc_decode_tx(index, stqno, e, desc, dt, dptr, ds) \
-	trace_avb_desc(index, stqno, (u32)e, (u32)desc, dt, dptr, ds, 0, 1)
+	trace_avb_desc(index, stqno, e, desc, dt, dptr, ds, 0, 1)
 
 #if !defined(CONFIG_RAVB_STREAMING_FTRACE_LOCK)
 #define trace_avb_lock(a, b, c, d)
