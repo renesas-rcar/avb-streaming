@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2016 Renesas Electronics Corporation
+ Copyright (C) 2014-2017 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
@@ -734,8 +734,9 @@ static void update_cbs_param(bool add, enum eavb_streamclass class,
 	struct streaming_private *stp = stp_ptr;
 	struct net_device *ndev = to_net_dev(stp->device.parent);
 	struct eavb_cbsparam *cbsTotal;
-	u32 maxFrameSize; /* bit */
-	u32 maxInterferenceSize; /* bit */
+	u32 maxFrameSize = 2012 * 8; /* bit */
+	u32 maxInterferenceSize =
+		((class == EAVB_CLASSA) ? 2100 : 4200) * 8; /* bit */
 	u32 offset;
 
 	cbsTotal = &stp->cbsInfo.param[class];
@@ -748,21 +749,15 @@ static void update_cbs_param(bool add, enum eavb_streamclass class,
 		stp->cbsInfo.bandwidthFraction -= cbs->bandwidthFraction;
 	}
 
-	if (cbsTotal->bandwidthFraction) {
-		maxFrameSize = 2012*8;
-		maxInterferenceSize =
-			((class == EAVB_CLASSA) ? 2100 : 4200) * 8;
 
-		cbsTotal->idleSlope = cbsTotal->bandwidthFraction >> 16;
-		cbsTotal->sendSlope = (U16_MAX - cbsTotal->idleSlope) * -1;
-		cbsTotal->hiCredit = maxInterferenceSize * cbsTotal->idleSlope;
-		cbsTotal->loCredit = maxFrameSize * cbsTotal->sendSlope;
-	} else {
+	cbsTotal->idleSlope = cbsTotal->bandwidthFraction >> 16;
+
+	if (!cbsTotal->idleSlope)
 		cbsTotal->idleSlope = 1;
-		cbsTotal->hiCredit = 0x7fffffff;
-		cbsTotal->sendSlope = -1;
-		cbsTotal->loCredit = 0x80000001;
-	}
+
+	cbsTotal->sendSlope = (U16_MAX - cbsTotal->idleSlope) * -1;
+	cbsTotal->hiCredit = maxInterferenceSize * cbsTotal->idleSlope;
+	cbsTotal->loCredit = maxFrameSize * cbsTotal->sendSlope;
 
 	if (apply) {
 		offset = class * sizeof(u32);
