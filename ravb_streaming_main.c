@@ -2784,9 +2784,14 @@ err_inithwqueue:
 			kset_unregister(hwq->attached);
 		if (hwq->device_add_flag)
 			device_unregister(&(hwq->device));
-		if (hwq->ring)
-			dma_free_coherent(pdev_dev, hwq->ringsize+1,
-					hwq->ring, hwq->ring_dma);
+
+		if (hwq->ring) {
+			dma_free_coherent(pdev_dev,
+					  (hwq->ringsize + 1) * sizeof(*desc),
+					  hwq->ring,
+					  hwq->ring_dma);
+		}
+
 		hwq->ring = NULL;
 		hwq->ring_dma = 0;
 	}
@@ -2857,9 +2862,13 @@ static void ravb_streaming_cleanup(void)
 			kset_unregister(hwq->attached);
 		if (hwq->device_add_flag)
 			device_unregister(&(hwq->device));
-		if (hwq->ring)
-			dma_free_coherent(pdev_dev, hwq->ringsize+1,
-					hwq->ring, hwq->ring_dma);
+
+		if (hwq->ring) {
+			dma_free_coherent(pdev_dev,
+					  (hwq->ringsize + 1) * sizeof(*desc),
+					  hwq->ring,
+					  hwq->ring_dma);
+		}
 	}
 
 	device_unregister(&(stp->device));
