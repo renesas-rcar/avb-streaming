@@ -2571,6 +2571,12 @@ static int ravb_streaming_init(void)
 
 	pr_info("init: start(%s)\n", interface);
 
+	if (major < 0 || 4094 < major) {
+		pr_err("init: invalid module param major=%d, should be set range in 0, 1-4094\n",
+		       major);
+		return -EINVAL;
+	}
+
 	if (ndev == NULL)
 		goto no_device;
 
