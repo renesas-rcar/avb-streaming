@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2016 Renesas Electronics Corporation
+ Copyright (C) 2014-2017 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
@@ -82,7 +82,7 @@
 	(RAVB_HWQUEUE_TXNUM + RAVB_HWQUEUE_RXNUM) /* exclude BE/NC queue */
 
 /* ringsize of descriptor chain */
-#define RAVB_RINGSIZE (128)
+#define RAVB_RINGSIZE (256)
 
 /* maximum number of entry each streaming device */
 #define RAVB_ENTRY_THRETH (RAVB_RINGSIZE)
