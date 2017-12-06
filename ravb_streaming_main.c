@@ -1144,8 +1144,6 @@ static long ravb_set_rxparam_kernel(void *handle, struct eavb_rxparam *rxparam)
 
 	avb_down(&stp->sem, -1, -1);
 	ret = register_streamID(stq->hwq, rxparam->streamid);
-	if (ret)
-		return ret;
 	avb_up(&stp->sem, -1, -1);
 
 	pr_debug("set_rxparam: %s %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -1155,7 +1153,7 @@ static long ravb_set_rxparam_kernel(void *handle, struct eavb_rxparam *rxparam)
 			rxparam->streamid[4], rxparam->streamid[5],
 			rxparam->streamid[6], rxparam->streamid[7]);
 
-	return 0;
+	return ret;
 }
 static long ravb_set_rxparam(struct file *file, unsigned long parm)
 {
