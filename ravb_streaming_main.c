@@ -63,6 +63,7 @@
 #define pr_fmt(fmt) KBUILD_MODNAME "/" fmt
 
 #include <linux/init.h>
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/spinlock.h>
@@ -1872,8 +1873,12 @@ static void ravb_streaming_vm_close(struct vm_area_struct *vma)
 {
 }
 
+#if KERNEL_VERSION(4, 10, 0) <= LINUX_VERSION_CODE
+static int ravb_streaming_vm_fault(struct vm_fault *vmf)
+#else
 static int ravb_streaming_vm_fault(struct vm_area_struct *area,
-		struct vm_fault *fdata)
+				   struct vm_fault *vmf)
+#endif
 {
 	return VM_FAULT_SIGBUS;
 }
