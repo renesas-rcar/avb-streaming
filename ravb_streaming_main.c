@@ -1331,7 +1331,7 @@ static long ravb_map_page(struct file *file, unsigned long parm)
 		goto failed;
 	}
 
-	if ((u64)userpage->page_dma >= 0x100000000)
+	if ((u64)userpage->page_dma >= 0x100000000UL)
 		pr_warn("map_page: 32bit over address(page_dma=%pad)\n",
 			&userpage->page_dma);
 	dma.dma_paddr = cpu_to_le32((u32)userpage->page_dma);
@@ -1628,7 +1628,7 @@ static int ravb_streaming_read_stq_kernel(void *handle,
 		} else {
 			pr_warn("read: underflow (tx_entry_complete=0x%016llx) < (i=%d)\n",
 				stq->dstats.tx_entry_complete, i);
-			stq->dstats.tx_entry_complete = 0x8000000000000000;
+			stq->dstats.tx_entry_complete = 0x8000000000000000ULL;
 		}
 	} else {
 		if (stq->dstats.rx_entry_complete >= (u64)i) {
@@ -1636,7 +1636,7 @@ static int ravb_streaming_read_stq_kernel(void *handle,
 		} else {
 			pr_warn("read: underflow (rx_entry_complete=0x%016llx) < (i=%d)\n",
 				stq->dstats.rx_entry_complete, i);
-			stq->dstats.rx_entry_complete = 0x8000000000000000;
+			stq->dstats.rx_entry_complete = 0x8000000000000000ULL;
 		}
 	}
 
@@ -2692,9 +2692,9 @@ static int ravb_streaming_init(void)
 			pr_err("init: cannot allocate hw queue ring area\n");
 			goto err_inithwqueue;
 		}
-		if ((u64)hwq->ring_dma >= 0x100000000) {
+		if ((u64)hwq->ring_dma >= 0x100000000UL) {
 			pr_err("ring_format: 32bit over address(ring_dma=%pad)\n",
-				&hwq->ring_dma);
+			       &hwq->ring_dma);
 			goto err_inithwqueue;
 		}
 
