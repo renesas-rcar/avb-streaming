@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2016 Renesas Electronics Corporation
+ Copyright (C) 2014-2017 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
@@ -860,7 +860,7 @@ static struct {
 	{ "driver", ARRAY_SIZE(proc_data_driver), proc_data_driver, true },
 };
 
-struct proc_dir_entry *stats_proc_root;
+static struct proc_dir_entry *stats_proc_root;
 
 /**
  * @brief  Create /proc entries
