@@ -610,7 +610,6 @@ static void desc_copy(struct hwqueue_info *hwq, struct stream_entry *e)
 static bool desc_decode_rx(struct hwqueue_info *hwq, struct stream_entry *e)
 {
 	struct ravb_rx_desc *desc;
-	dma_addr_t desc_dma;
 	struct eavb_entryvec *evec;
 	bool progress = true;
 	int i;
@@ -627,11 +626,10 @@ static bool desc_decode_rx(struct hwqueue_info *hwq, struct stream_entry *e)
 		desc = (struct ravb_rx_desc *)e->descs[i];
 		if (!desc)
 			continue;
-		desc_dma = e->dma_descs[i];
 
 #if DEBUG_AVB_CACHESYNC
-		dma_sync_single_for_cpu(pdev_dev, desc_dma,
-				sizeof(*desc), DMA_FROM_DEVICE);
+		dma_sync_single_for_cpu(pdev_dev, e->dma_descs[i],
+					sizeof(*desc), DMA_FROM_DEVICE);
 #endif
 
 		switch (desc->die_dt & 0xf0) {
@@ -680,7 +678,6 @@ static bool desc_decode_rx(struct hwqueue_info *hwq, struct stream_entry *e)
 static bool desc_decode_tx(struct hwqueue_info *hwq, struct stream_entry *e)
 {
 	struct ravb_desc *desc;
-	dma_addr_t desc_dma;
 	struct eavb_entryvec *evec;
 	int i;
 #if DEBUG_AVB_CACHESYNC
@@ -694,11 +691,10 @@ static bool desc_decode_tx(struct hwqueue_info *hwq, struct stream_entry *e)
 		desc = e->descs[i];
 		if (!desc)
 			continue;
-		desc_dma = e->dma_descs[i];
 
 #if DEBUG_AVB_CACHESYNC
-		dma_sync_single_for_cpu(pdev_dev, desc_dma,
-				sizeof(*desc), DMA_FROM_DEVICE);
+		dma_sync_single_for_cpu(pdev_dev, e->dma_descs[i],
+					sizeof(*desc), DMA_FROM_DEVICE);
 #endif
 
 		if ((desc->die_dt & 0xf0) != DT_FEMPTY)
@@ -2337,7 +2333,6 @@ static int ravb_hwq_task(void *param)
 	struct net_device *ndev = to_net_dev(stp->device.parent);
 	int ret;
 	bool progress;
-	u32 events;
 
 	while (!kthread_should_stop()) {
 		ret = avb_wait_event_interruptible(hwq->waitEvent,
@@ -2358,7 +2353,7 @@ static int ravb_hwq_task(void *param)
 			break;
 		}
 
-		events = hwq_event_clear(hwq);
+		hwq_event_clear(hwq);
 
 		switch (hwq->state) {
 		case AVB_STATE_IDLE:
@@ -2566,7 +2561,6 @@ static int ravb_streaming_init(void)
 	struct ravb_desc *desc;
 	struct device *dev;
 	struct device *pdev_dev;
-	struct device_node *np;
 	const struct of_device_id *match;
 	char taskname[32] = { '\0' };
 	const char *irq_name, *irq_name2;
@@ -2580,11 +2574,10 @@ static int ravb_streaming_init(void)
 		return -EINVAL;
 	}
 
-	if (ndev == NULL)
+	if (!ndev)
 		goto no_device;
 
 	pdev_dev = ndev->dev.parent;
-	np = pdev_dev->of_node;
 
 	/* check supported devices */
 	match = of_match_device(of_match_ptr(ravb_streaming_match_table),
