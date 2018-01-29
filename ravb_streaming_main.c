@@ -636,6 +636,7 @@ static bool desc_decode_rx(struct hwqueue_info *hwq, struct stream_entry *e)
 		case DT_FSINGLE:
 		case DT_FEND:
 			progress = false;
+			/* fallthrough */
 		case DT_FSTART:
 		case DT_FMID:
 			put_desc(hwq, desc);
