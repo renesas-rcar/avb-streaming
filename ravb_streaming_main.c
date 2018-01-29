@@ -185,8 +185,10 @@ static struct kmem_cache *streaming_entry_cache;
 		up(sem); \
 	} while (0)
 
-static int ravb_wait_reg(struct net_device *ndev, enum ravb_reg reg,
-		     u32 mask, u32 value)
+static int ravb_wait_reg(struct net_device *ndev,
+			 enum ravb_reg reg,
+			 u32 mask,
+			 u32 value)
 {
 	int i;
 
@@ -195,6 +197,7 @@ static int ravb_wait_reg(struct net_device *ndev, enum ravb_reg reg,
 			return 0;
 		udelay(10);
 	}
+
 	return -ETIMEDOUT;
 }
 
@@ -234,7 +237,7 @@ const char *avb_state_to_str(enum AVB_STATE state)
 }
 
 static inline void hwq_sequencer(struct hwqueue_info *hwq,
-		enum AVB_STATE state)
+				 enum AVB_STATE state)
 {
 	if (hwq->state != state) {
 		trace_avb_hwq_state(hwq->index, state);
@@ -243,7 +246,7 @@ static inline void hwq_sequencer(struct hwqueue_info *hwq,
 }
 
 static inline void stq_sequencer(struct stqueue_info *stq,
-		enum AVB_STATE state)
+				 enum AVB_STATE state)
 {
 	if (stq->state != state) {
 		trace_avb_stq_state(stq->hwq->index, stq->qno, state);
@@ -252,7 +255,8 @@ static inline void stq_sequencer(struct stqueue_info *stq,
 }
 
 static inline u32 hwq_event_irq(struct hwqueue_info *hwq,
-		enum AVB_EVENT event, u32 param)
+				enum AVB_EVENT event,
+				u32 param)
 {
 	u32 events;
 
@@ -272,7 +276,8 @@ static inline u32 hwq_event_irq(struct hwqueue_info *hwq,
 		if (!(events & event)) {
 			hwq->pendingEvents |= event;
 			avb_wake_up_interruptible(&hwq->waitEvent,
-				 hwq->index, -1);
+						  hwq->index,
+						  -1);
 		}
 		break;
 	default:
@@ -284,7 +289,8 @@ static inline u32 hwq_event_irq(struct hwqueue_info *hwq,
 }
 
 static inline u32 hwq_event(struct hwqueue_info *hwq,
-		enum AVB_EVENT event, u32 param)
+			    enum AVB_EVENT event,
+			    u32 param)
 {
 	struct streaming_private *stp = to_stp(hwq->device.parent);
 	struct net_device *ndev = to_net_dev(stp->device.parent);
@@ -366,12 +372,16 @@ static void cachesync_streaming_entry(struct stream_entry *e)
 
 	if (e->stq->hwq->tx) {
 		for (i = 0; i < e->vecsize; i++, evec++)
-			dma_sync_single_for_device(pdev_dev, evec->base,
-					evec->len, DMA_TO_DEVICE);
+			dma_sync_single_for_device(pdev_dev,
+						   evec->base,
+						   evec->len,
+						   DMA_TO_DEVICE);
 	} else {
 		for (i = 0; i < e->vecsize; i++, evec++)
-			dma_sync_single_for_cpu(pdev_dev, evec->base,
-					evec->len, DMA_FROM_DEVICE);
+			dma_sync_single_for_cpu(pdev_dev,
+						evec->base,
+						evec->len,
+						DMA_FROM_DEVICE);
 	}
 }
 
@@ -417,21 +427,23 @@ static void put_userpage(struct ravb_user_page *userpage)
 	struct net_device *ndev = to_net_dev(stp->device.parent);
 	struct device *pdev_dev = ndev->dev.parent;
 
-	dma_unmap_page(pdev_dev, userpage->page_dma,
-			PAGE_SIZE, DMA_FROM_DEVICE);
+	dma_unmap_page(pdev_dev,
+		       userpage->page_dma,
+		       PAGE_SIZE,
+		       DMA_FROM_DEVICE);
 	put_page(userpage->page);
 	list_del(&userpage->list);
 	vfree(userpage);
 }
 
 static struct ravb_user_page *lookup_userpage(struct stqueue_info *stq,
-		dma_addr_t physaddr)
+					      dma_addr_t physaddr)
 {
 	struct streaming_private *stp = stp_ptr;
 	struct ravb_user_page *userpage;
 
 	if (list_empty(&stp->userpages) &&
-			(stq && list_empty(&stq->userpages)))
+	    (stq && list_empty(&stq->userpages)))
 		return NULL;
 
 	if (stq)
@@ -546,7 +558,7 @@ static int desc_pre_encode_tx(struct stream_entry *e)
 	}
 
 	if (i)
-		e->pre_enc[i-1].die_dt = ((i == 1) ? DT_FSINGLE : DT_FEND);
+		e->pre_enc[i - 1].die_dt = ((i == 1) ? DT_FSINGLE : DT_FEND);
 
 	return i;
 }
@@ -587,8 +599,10 @@ static void desc_copy(struct hwqueue_info *hwq, struct stream_entry *e)
 		*desc = e->pre_enc[i];
 
 #if DEBUG_AVB_CACHESYNC
-		dma_sync_single_for_device(pdev_dev, desc_dma,
-				sizeof(*desc), DMA_TO_DEVICE);
+		dma_sync_single_for_device(pdev_dev,
+					   desc_dma,
+					   sizeof(*desc),
+					   DMA_TO_DEVICE);
 #endif
 
 		dstats_current++;
@@ -596,9 +610,15 @@ static void desc_copy(struct hwqueue_info *hwq, struct stream_entry *e)
 		e->descs[i] = desc;
 		e->dma_descs[i] = desc_dma;
 
-		trace_avb_desc(hwq->index, e->stq->qno,
-				e, desc, desc->die_dt, desc->dptr, desc->ds,
-				1, hwq->tx);
+		trace_avb_desc(hwq->index,
+			       e->stq->qno,
+			       e,
+			       desc,
+			       desc->die_dt,
+			       desc->dptr,
+			       desc->ds,
+			       1,
+			       hwq->tx);
 	}
 
 	if (hwq->tx)
@@ -649,15 +669,20 @@ static bool desc_decode_rx(struct hwqueue_info *hwq, struct stream_entry *e)
 		evec->len = desc->ds_cc & RX_DS;
 		evec->base = desc->dptr;
 
-		if (desc->msc & (MSC_CRC|MSC_RFE|MSC_RTSF|MSC_RTLF|MSC_CEEF))
+		if (desc->msc & (MSC_CRC | MSC_RFE | MSC_RTSF | MSC_RTLF | MSC_CEEF))
 			e->errors++;
 		e->total_bytes += evec->len;
 
 		e->descs[i] = NULL;
 		e->dma_descs[i] = 0;
 
-		trace_avb_desc_decode_rx(hwq->index, e->stq->qno,
-				e, desc, desc->die_dt, desc->dptr, desc->ds_cc);
+		trace_avb_desc_decode_rx(hwq->index,
+					 e->stq->qno,
+					 e,
+					 desc,
+					 desc->die_dt,
+					 desc->dptr,
+					 desc->ds_cc);
 	}
 
 	/* descriptor sync error */
@@ -708,8 +733,13 @@ static bool desc_decode_tx(struct hwqueue_info *hwq, struct stream_entry *e)
 		e->descs[i] = NULL;
 		e->dma_descs[i] = 0;
 
-		trace_avb_desc_decode_tx(hwq->index, e->stq->qno,
-				e, desc, desc->die_dt, desc->dptr, desc->ds);
+		trace_avb_desc_decode_tx(hwq->index,
+					 e->stq->qno,
+					 e,
+					 desc,
+					 desc->die_dt,
+					 desc->dptr,
+					 desc->ds);
 	}
 
 	return (i == e->vecsize) ? false : true;
@@ -726,8 +756,10 @@ static bool desc_decode(struct hwqueue_info *hwq, struct stream_entry *e)
 /**
  * calcuration CBS parameter functions
  */
-static void update_cbs_param(bool add, enum eavb_streamclass class,
-		struct eavb_cbsparam *cbs, bool apply)
+static void update_cbs_param(bool add,
+			     enum eavb_streamclass class,
+			     struct eavb_cbsparam *cbs,
+			     bool apply)
 {
 	struct streaming_private *stp = stp_ptr;
 	struct net_device *ndev = to_net_dev(stp->device.parent);
@@ -747,7 +779,6 @@ static void update_cbs_param(bool add, enum eavb_streamclass class,
 		stp->cbsInfo.bandwidthFraction -= cbs->bandwidthFraction;
 	}
 
-
 	cbsTotal->idleSlope = cbsTotal->bandwidthFraction >> 16;
 
 	if (!cbsTotal->idleSlope)
@@ -759,21 +790,22 @@ static void update_cbs_param(bool add, enum eavb_streamclass class,
 
 	if (apply) {
 		offset = class * sizeof(u32);
-		ravb_write(ndev, cbsTotal->idleSlope, CIVR0+offset);
-		ravb_write(ndev, cbsTotal->sendSlope, CDVR0+offset);
-		ravb_write(ndev, cbsTotal->hiCredit, CUL0+offset);
-		ravb_write(ndev, cbsTotal->loCredit, CLL0+offset);
+		ravb_write(ndev, cbsTotal->idleSlope, CIVR0 + offset);
+		ravb_write(ndev, cbsTotal->sendSlope, CDVR0 + offset);
+		ravb_write(ndev, cbsTotal->hiCredit, CUL0 + offset);
+		ravb_write(ndev, cbsTotal->loCredit, CLL0 + offset);
 	}
 }
 
 static inline void register_cbs_param(enum eavb_streamclass class,
-		struct eavb_cbsparam *cbs)
+				      struct eavb_cbsparam *cbs)
 {
 	update_cbs_param(true, class, cbs, true);
 }
 
 static inline void unregister_cbs_param(enum eavb_streamclass class,
-		struct eavb_cbsparam *cbs, bool apply)
+					struct eavb_cbsparam *cbs,
+					bool apply)
 {
 	update_cbs_param(false, class, cbs, apply);
 }
@@ -939,8 +971,11 @@ static struct stqueue_info *get_stq(struct hwqueue_info *hwq, int index)
 	stq->kobj.kset = hwq->attached;
 
 	if (kobject_init_and_add(&stq->kobj,
-				(hwq->tx) ? &stq_ktype_tx : &stq_ktype_rx,
-				NULL, "%s:%d", hwq_name(hwq), stq->qno))
+				 hwq->tx ? &stq_ktype_tx : &stq_ktype_rx,
+				 NULL,
+				 "%s:%d",
+				 hwq_name(hwq),
+				 stq->qno))
 		goto no_kobj;
 
 	if (sysfs_create_group(&stq->kobj, &stq_dev_stat_group))
@@ -1053,9 +1088,10 @@ static long ravb_set_txparam_kernel(void *handle, struct eavb_txparam *txparam)
 		return -EBUSY;
 
 	pr_debug("set_txparam: %s %08x %08x %08x\n",
-			stq_name(stq),
-			txparam->cbs.bandwidthFraction,
-			txparam->cbs.idleSlope, txparam->cbs.sendSlope);
+		 stq_name(stq),
+		 txparam->cbs.bandwidthFraction,
+		 txparam->cbs.idleSlope,
+		 txparam->cbs.sendSlope);
 
 	avb_down(&stp->sem, -1, -1);
 
@@ -1076,6 +1112,7 @@ static long ravb_set_txparam_kernel(void *handle, struct eavb_txparam *txparam)
 
 	return 0;
 }
+
 static long ravb_set_txparam(struct file *file, unsigned long parm)
 {
 	struct ravb_streaming_kernel_if *kif = file->private_data;
@@ -1107,6 +1144,7 @@ static long ravb_get_txparam_kernel(void *handle, struct eavb_txparam *txparam)
 
 	return 0;
 }
+
 static long ravb_get_txparam(struct file *file, unsigned long parm)
 {
 	struct ravb_streaming_kernel_if *kif = file->private_data;
@@ -1144,14 +1182,15 @@ static long ravb_set_rxparam_kernel(void *handle, struct eavb_rxparam *rxparam)
 	avb_up(&stp->sem, -1, -1);
 
 	pr_debug("set_rxparam: %s %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
-			stq_name(stq),
-			rxparam->streamid[0], rxparam->streamid[1],
-			rxparam->streamid[2], rxparam->streamid[3],
-			rxparam->streamid[4], rxparam->streamid[5],
-			rxparam->streamid[6], rxparam->streamid[7]);
+		 stq_name(stq),
+		 rxparam->streamid[0], rxparam->streamid[1],
+		 rxparam->streamid[2], rxparam->streamid[3],
+		 rxparam->streamid[4], rxparam->streamid[5],
+		 rxparam->streamid[6], rxparam->streamid[7]);
 
 	return ret;
 }
+
 static long ravb_set_rxparam(struct file *file, unsigned long parm)
 {
 	struct ravb_streaming_kernel_if *kif = file->private_data;
@@ -1180,10 +1219,11 @@ static long ravb_get_rxparam_kernel(void *handle, struct eavb_rxparam *rxparam)
 	pr_debug("get_rxparam: %s\n", stq_name(stq));
 
 	memcpy(rxparam->streamid, stq->hwq->streamID,
-		sizeof(rxparam->streamid));
+	       sizeof(rxparam->streamid));
 
 	return 0;
 }
+
 static long ravb_get_rxparam(struct file *file, unsigned long parm)
 {
 	struct ravb_streaming_kernel_if *kif = file->private_data;
@@ -1208,9 +1248,9 @@ static long ravb_get_cbs_info(struct file *file, unsigned long parm)
 	long err = 0;
 
 	pr_debug("get_cbs_info: %08x A:%08x B:%08x\n",
-			stp->cbsInfo.bandwidthFraction,
-			stp->cbsInfo.param[0].bandwidthFraction,
-			stp->cbsInfo.param[1].bandwidthFraction);
+		 stp->cbsInfo.bandwidthFraction,
+		 stp->cbsInfo.param[0].bandwidthFraction,
+		 stp->cbsInfo.param[1].bandwidthFraction);
 
 	avb_down(&stp->sem, -1, -1);
 	if (copy_to_user(buf, &stp->cbsInfo, sizeof(struct eavb_cbsinfo)))
@@ -1231,7 +1271,7 @@ static long ravb_set_option_kernel(void *handle, struct eavb_option *option)
 		return -EINVAL;
 
 	pr_debug("set_option: %s %d %08x\n",
-			stq_name(stq), option->id, option->param);
+		 stq_name(stq), option->id, option->param);
 
 	switch (option->id) {
 	case EAVB_OPTIONID_BLOCKMODE:
@@ -1250,6 +1290,7 @@ static long ravb_set_option_kernel(void *handle, struct eavb_option *option)
 
 	return 0;
 }
+
 static long ravb_set_option(struct file *file, unsigned long parm)
 {
 	struct ravb_streaming_kernel_if *kif = file->private_data;
@@ -1281,10 +1322,11 @@ static long ravb_get_option_kernel(void *handle, struct eavb_option *option)
 	}
 
 	pr_debug("get_option: %s %d %08x\n",
-			stq_name(stq), option->id, option->param);
+		 stq_name(stq), option->id, option->param);
 
 	return 0;
 }
+
 static long ravb_get_option(struct file *file, unsigned long parm)
 {
 	struct ravb_streaming_kernel_if *kif = file->private_data;
@@ -1353,7 +1395,7 @@ static long ravb_map_page(struct file *file, unsigned long parm)
 	avb_up(&stp->sem, -1, -1);
 
 	pr_debug("map_page: %p %08x %d\n", userpage->page,
-		dma.dma_paddr, dma.mmap_size);
+		 dma.dma_paddr, dma.mmap_size);
 
 	return 0;
 
@@ -1420,7 +1462,7 @@ int ravb_streaming_open_stq_kernel(enum AVB_DEVNAME dev_name,
 		return -EINVAL;
 
 	index = dev_name;
-	if ((index >= RAVB_HWQUEUE_NUM) || (index < 0))
+	if (index >= RAVB_HWQUEUE_NUM || index < 0)
 		return -ENODEV;
 
 	hwq = &stp->hwqueueInfoTable[index];
@@ -1492,6 +1534,7 @@ static int ravb_streaming_open_stq(struct inode *inode, struct file *file)
 
 	return 0;
 }
+
 static int ravb_streaming_open(struct inode *inode, struct file *file)
 {
 	if (iminor(inode) == AVB_CTRL_MINOR)
@@ -1527,7 +1570,7 @@ int ravb_streaming_release_stq_kernel(void *handle)
 		avb_up(&hwq->sem, hwq->index, stq->qno);
 		trace_avb_wait_sleep(hwq->index, stq->qno);
 		while (wait_event_interruptible(stq->waitEvent,
-					stq->state == AVB_STATE_IDLE))
+						stq->state == AVB_STATE_IDLE))
 			;
 		avb_down(&hwq->sem, hwq->index, stq->qno);
 		break;
@@ -1558,6 +1601,7 @@ static int ravb_streaming_release_stq(struct inode *inode, struct file *file)
 
 	return 0;
 }
+
 static int ravb_streaming_release(struct inode *inode, struct file *file)
 {
 	if (!file->private_data)
@@ -1587,8 +1631,8 @@ static int ravb_streaming_read_stq_kernel(void *handle,
 	if (!num)
 		return 0;
 
-	if ((stq->blockmode == EAVB_BLOCK_WAITALL) &&
-	    (num > RAVB_ENTRY_THRETH))
+	if (stq->blockmode == EAVB_BLOCK_WAITALL &&
+	    num > RAVB_ENTRY_THRETH)
 		return -ENOMEM;
 
 	hwq = stq->hwq;
@@ -1614,8 +1658,8 @@ static int ravb_streaming_read_stq_kernel(void *handle,
 	num = min_t(u32, (u32)num, stq->entrynum.completed);
 	for (i = 0; i < num; i++) {
 		e = list_first_entry(&stq->entryLogQueue,
-				struct stream_entry, list);
-		memcpy(buf+i, &e->msg, sizeof(struct eavb_entry));
+				     struct stream_entry, list);
+		memcpy(buf + i, &e->msg, sizeof(struct eavb_entry));
 		if (!uncached_access(stq))
 			cachesync_streaming_entry(e);
 		put_streaming_entry(e);
@@ -1648,8 +1692,10 @@ static int ravb_streaming_read_stq_kernel(void *handle,
 
 	return i;
 }
+
 static ssize_t ravb_streaming_read_stq(struct file *file,
-		char __user *buf, size_t count, loff_t *ppos)
+				       char __user *buf,
+				       size_t count, loff_t *ppos)
 {
 	struct ravb_streaming_kernel_if *kif = file->private_data;
 	struct stqueue_info *stq = kif->handle;
@@ -1684,8 +1730,10 @@ static ssize_t ravb_streaming_read_stq(struct file *file,
 
 	return rsize;
 }
+
 static ssize_t ravb_streaming_read(struct file *file,
-		char __user *buf, size_t count, loff_t *ppos)
+				   char __user *buf,
+				   size_t count, loff_t *ppos)
 {
 	if (!file->private_data)
 		return -EPERM;
@@ -1747,7 +1795,7 @@ static int ravb_streaming_write_stq_kernel(void *handle,
 		e = get_streaming_entry();
 		if (!e)
 			break;
-		memcpy(&e->msg, buf+i, sizeof(struct eavb_entry));
+		memcpy(&e->msg, buf + i, sizeof(struct eavb_entry));
 		e->vecsize = desc_pre_encode(e, stq->hwq->tx);
 		if (e->vecsize == 0) {
 			/* TODO countup invalid entry num */
@@ -1774,8 +1822,8 @@ static int ravb_streaming_write_stq_kernel(void *handle,
 	list_splice_tail(&entry_queue, &stq->entryWaitQueue);
 
 	/* if IDLE or WAITCOMPLETE, attach to hwq */
-	if ((stq->state == AVB_STATE_IDLE) ||
-		(stq->state == AVB_STATE_WAITCOMPLETE)) {
+	if (stq->state == AVB_STATE_IDLE ||
+	    stq->state == AVB_STATE_WAITCOMPLETE) {
 		stq_sequencer(stq, AVB_STATE_ACTIVE);
 		list_add_tail(&stq->list, &hwq->activeStreamQueue);
 		hwq_event(hwq, AVB_EVENT_ATTACH, stq->qno);
@@ -1787,8 +1835,10 @@ static int ravb_streaming_write_stq_kernel(void *handle,
 
 	return i;
 }
+
 static ssize_t ravb_streaming_write_stq(struct file *file,
-		const char __user *buf, size_t count, loff_t *ppos)
+					const char __user *buf,
+					size_t count, loff_t *ppos)
 {
 	struct ravb_streaming_kernel_if *kif = file->private_data;
 	struct stqueue_info *stq = kif->handle;
@@ -1823,8 +1873,10 @@ static ssize_t ravb_streaming_write_stq(struct file *file,
 
 	return wsize;
 }
+
 static ssize_t ravb_streaming_write(struct file *file,
-		const char __user *buf, size_t count, loff_t *ppos)
+				    const char __user *buf,
+				    size_t count, loff_t *ppos)
 {
 	if (!file->private_data)
 		return -EPERM;
@@ -1833,26 +1885,28 @@ static ssize_t ravb_streaming_write(struct file *file,
 }
 
 static unsigned int ravb_streaming_poll_stq(struct file *file,
-		struct poll_table_struct *wait)
+					    struct poll_table_struct *wait)
 {
 	int ret = 0;
 	struct ravb_streaming_kernel_if *kif = file->private_data;
 	struct stqueue_info *stq = kif->handle;
 
 	pr_debug("poll: %s r=%d, w=%d\n",
-			stq_name(stq), is_readable(stq), is_writeble(stq));
+		 stq_name(stq), is_readable(stq), is_writeble(stq));
 
 	poll_wait(file, &stq->waitEvent, wait);
 
 	if (is_readable(stq))
 		ret |= POLLIN | POLLRDNORM;
+
 	if (is_writeble(stq))
 		ret |= POLLOUT | POLLWRNORM;
 
 	return ret;
 }
+
 static unsigned int ravb_streaming_poll(struct file *file,
-		struct poll_table_struct *wait)
+					struct poll_table_struct *wait)
 {
 	if (!file->private_data)
 		return 0;
@@ -1878,7 +1932,7 @@ static int ravb_streaming_vm_fault(struct vm_area_struct *area,
 	return VM_FAULT_SIGBUS;
 }
 
-static struct vm_operations_struct ravb_streaming_mmap_ops = {
+static const struct vm_operations_struct ravb_streaming_mmap_ops = {
 	.open   = ravb_streaming_vm_open,
 	.close  = ravb_streaming_vm_close,
 	.fault  = ravb_streaming_vm_fault
@@ -1899,31 +1953,32 @@ static int ravb_streaming_mmap(struct file *file, struct vm_area_struct *vma)
 		stq = NULL;
 
 	pr_debug("mmap: %s range=%08lx-%08lx,size=%lu,physaddr=%pad\n",
-			(stq) ? stq_name(stq) : stp_name(stp),
-			vma->vm_start, vma->vm_end, size, &physaddr);
+		 (stq) ? stq_name(stq) : stp_name(stp),
+		 vma->vm_start, vma->vm_end, size, &physaddr);
 
 	if (!lookup_userpage(stq, physaddr))
 		return -EINVAL;
 
 	vma->vm_page_prot = phys_mem_access_prot(file,
-			pgoff,
-			size,
-			vma->vm_page_prot);
+						 pgoff,
+						 size,
+						 vma->vm_page_prot);
 
 	vma->vm_ops = &ravb_streaming_mmap_ops;
 
 	if (remap_pfn_range(vma,
-				vma->vm_start,
-				pgoff,
-				size,
-				vma->vm_page_prot))
+			    vma->vm_start,
+			    pgoff,
+			    size,
+			    vma->vm_page_prot))
 		return -EAGAIN;
 
 	return 0;
 }
 
 static long ravb_streaming_ioctl_stp(struct file *file,
-		unsigned int cmd, unsigned long parm)
+				     unsigned int cmd,
+				     unsigned long parm)
 {
 	struct streaming_private *stp = stp_ptr;
 
@@ -1947,8 +2002,10 @@ static long ravb_streaming_ioctl_stp(struct file *file,
 		return -EINVAL;
 	}
 }
+
 static long ravb_streaming_ioctl_stq(struct file *file,
-		unsigned int cmd, unsigned long parm)
+				     unsigned int cmd,
+				     unsigned long parm)
 {
 	struct ravb_streaming_kernel_if *kif = file->private_data;
 	struct stqueue_info *stq = kif->handle;
@@ -1985,6 +2042,7 @@ static long ravb_streaming_ioctl_stq(struct file *file,
 		return -EINVAL;
 	}
 }
+
 static long ravb_streaming_ioctl(struct file *file,
 				 unsigned int cmd, unsigned long parm)
 {
@@ -2084,7 +2142,8 @@ static const struct file_operations ravb_streaming_fops = {
 };
 
 static inline int ravb_control_interrupt(struct net_device *ndev,
-		struct hwqueue_info *hwq, bool enable)
+					 struct hwqueue_info *hwq,
+					 bool enable)
 {
 	struct ravb_private *priv = netdev_priv(ndev);
 	u32 ofs, val;
@@ -2094,16 +2153,16 @@ static inline int ravb_control_interrupt(struct net_device *ndev,
 	ofs = (hwq->tx) ? TIC : RIC0;
 	val = ravb_read(ndev, ofs);
 	if (enable)
-		ravb_write(ndev,  (val | (1<<hwq->chno)), ofs);
+		ravb_write(ndev, (val | (1 << hwq->chno)), ofs);
 	else
-		ravb_write(ndev, (val & ~(1<<hwq->chno)), ofs);
+		ravb_write(ndev, (val & ~(1 << hwq->chno)), ofs);
 	avb_spin_unlock_irqrestore(&priv->lock, flags, hwq->index, -1);
 
 	return 0;
 }
 
 static inline int ravb_enable_interrupt(struct net_device *ndev,
-		struct hwqueue_info *hwq)
+					struct hwqueue_info *hwq)
 {
 	struct ravb_private *priv = netdev_priv(ndev);
 
@@ -2123,7 +2182,7 @@ static inline int ravb_enable_interrupt(struct net_device *ndev,
 }
 
 static inline int ravb_disable_interrupt(struct net_device *ndev,
-		struct hwqueue_info *hwq)
+					 struct hwqueue_info *hwq)
 {
 	struct ravb_private *priv = netdev_priv(ndev);
 
@@ -2139,8 +2198,7 @@ static inline int ravb_disable_interrupt(struct net_device *ndev,
 	return ravb_control_interrupt(ndev, hwq, false);
 }
 
-static inline int ravb_reload_chain(struct net_device *ndev,
-		int index)
+static inline int ravb_reload_chain(struct net_device *ndev, int index)
 {
 	u32 loadmask = 1 << index;
 
@@ -2197,7 +2255,8 @@ static int hwq_task_process_terminate(struct hwqueue_info *hwq)
 			if (stq) {
 				stq_sequencer(stq, AVB_STATE_IDLE);
 				avb_wake_up_interruptible(&stq->waitEvent,
-					hwq->index, stq->qno);
+							  hwq->index,
+							  stq->qno);
 			}
 		}
 	}
@@ -2213,11 +2272,13 @@ static int hwq_task_process_encode(struct hwqueue_info *hwq)
 	struct net_device *ndev = to_net_dev(stp->device.parent);
 
 	while (hwq->remain >= EAVB_ENTRYVECNUM &&
-			!list_empty(&hwq->activeStreamQueue)) {
+	       !list_empty(&hwq->activeStreamQueue)) {
 		stq = list_first_entry(&hwq->activeStreamQueue,
-				struct stqueue_info, list);
+				       struct stqueue_info,
+				       list);
 		e = list_first_entry(&stq->entryWaitQueue,
-				struct stream_entry, list);
+				     struct stream_entry,
+				     list);
 
 		desc_copy(hwq, e);
 		trace_avb_entry_encode(e);
@@ -2281,7 +2342,7 @@ static int hwq_task_process_decode(struct hwqueue_info *hwq)
 		}
 
 		if (stq->entrynum.processed == 0 &&
-				stq->state == AVB_STATE_WAITCOMPLETE)
+		    stq->state == AVB_STATE_WAITCOMPLETE)
 			stq_sequencer(stq, AVB_STATE_IDLE);
 
 		stq_pool[stq->qno] = stq;
@@ -2337,7 +2398,9 @@ static int ravb_hwq_task(void *param)
 
 	while (!kthread_should_stop()) {
 		ret = avb_wait_event_interruptible(hwq->waitEvent,
-				hwq->pendingEvents, hwq->index, -1);
+						   hwq->pendingEvents,
+						   hwq->index,
+						   -1);
 		if (ret < 0) {
 			pr_err("hwq_task.%d: wait_event error\n", hwq->index);
 			continue;
@@ -2373,7 +2436,7 @@ static int ravb_hwq_task(void *param)
 
 				/* terminate hardware queue */
 				hwq_task_process_terminate(hwq);
-				/* convert new entry to build desciptor */
+				/* convert new entry to build descriptor */
 				hwq_task_process_encode(hwq);
 				/* process completed descriptor by HW */
 				progress = hwq_task_process_decode(hwq);
@@ -2430,12 +2493,12 @@ static irqreturn_t ravb_streaming_interrupt(int irq, void *dev_id)
 		u32 tis = ravb_read(ndev, TIS);
 		u32 tmp = 0;
 
-		limit = RAVB_HWQUEUE_TXNUM+RAVB_HWQUEUE_RESERVEDNUM;
+		limit = RAVB_HWQUEUE_TXNUM + RAVB_HWQUEUE_RESERVEDNUM;
 		for (i = RAVB_HWQUEUE_RESERVEDNUM; i < limit; i++) {
-			if (!(tis & (1<<i)))
+			if (!(tis & (1 << i)))
 				continue;
 
-			tmp |= (1<<i);
+			tmp |= (1 << i);
 			index = i - RAVB_HWQUEUE_RESERVEDNUM;
 			hwq = &stp->hwqueueInfoTable[index];
 			hwq_event_irq(hwq, AVB_EVENT_TXINT, index);
@@ -2452,12 +2515,12 @@ static irqreturn_t ravb_streaming_interrupt(int irq, void *dev_id)
 		u32 ris0 = ravb_read(ndev, RIS0);
 		u32 tmp = 0;
 
-		limit = RAVB_HWQUEUE_RXNUM+RAVB_HWQUEUE_RESERVEDNUM;
+		limit = RAVB_HWQUEUE_RXNUM + RAVB_HWQUEUE_RESERVEDNUM;
 		for (i = RAVB_HWQUEUE_RESERVEDNUM; i < limit; i++) {
-			if (!(ris0 & (1<<i)))
+			if (!(ris0 & (1 << i)))
 				continue;
 
-			tmp |= (1<<i);
+			tmp |= (1 << i);
 			index = i - RAVB_HWQUEUE_RESERVEDNUM +
 				RAVB_HWQUEUE_TXNUM;
 			hwq = &stp->hwqueueInfoTable[index];
@@ -2605,10 +2668,13 @@ static int ravb_streaming_init(void)
 	if (major) {
 		stp->dev = MKDEV(major, 0);
 		err = register_chrdev_region(stp->dev,
-				AVB_MINOR_RANGE, "avb");
+					     AVB_MINOR_RANGE,
+					     "avb");
 	} else {
-		err = alloc_chrdev_region(&stp->dev, 0,
-				AVB_MINOR_RANGE, "avb");
+		err = alloc_chrdev_region(&stp->dev,
+					  0,
+					  AVB_MINOR_RANGE,
+					  "avb");
 	}
 
 	if (err < 0) {
@@ -2638,12 +2704,15 @@ static int ravb_streaming_init(void)
 
 	/* create entry cache */
 	streaming_entry_cache = kmem_cache_create("avb_entry_cache",
-			sizeof(struct stream_entry), 0, 0, NULL);
+						  sizeof(struct stream_entry),
+						  0,
+						  0,
+						  NULL);
 
 	INIT_LIST_HEAD(&stp->userpages);
 
 	/* device initialize */
-	dev = &(stp->device);
+	dev = &stp->device;
 	device_initialize(dev);
 	dev->parent = &ndev->dev;
 	dev->class = stp->avb_class;
@@ -2658,9 +2727,12 @@ static int ravb_streaming_init(void)
 		goto err_initstp;
 
 	if (priv->chip_id == RCAR_GEN2) {
-		err = devm_request_irq(dev, ndev->irq,
-				ravb_streaming_interrupt,
-				IRQF_SHARED, "avb_streaming", stp);
+		err = devm_request_irq(dev,
+				       ndev->irq,
+				       ravb_streaming_interrupt,
+				       IRQF_SHARED,
+				       "avb_streaming",
+				       stp);
 		if (err) {
 			pr_err("request_irq error\n");
 			goto err_initirq;
@@ -2679,10 +2751,11 @@ static int ravb_streaming_init(void)
 		hwq->chno = hwq->index + RAVB_HWQUEUE_RESERVEDNUM -
 			(RAVB_HWQUEUE_TXNUM * !hwq->tx);
 		hwq->state = AVB_STATE_IDLE;
-		hwq->ringsize = RAVB_RINGSIZE-1;
+		hwq->ringsize = RAVB_RINGSIZE - 1;
 		hwq->ring = dma_alloc_coherent(pdev_dev,
-				(hwq->ringsize+1)*sizeof(*desc),
-				&hwq->ring_dma, GFP_KERNEL);
+					       (hwq->ringsize + 1) * sizeof(*desc),
+					       &hwq->ring_dma,
+					       GFP_KERNEL);
 		if (!hwq->ring) {
 			pr_err("init: cannot allocate hw queue ring area\n");
 			goto err_inithwqueue;
@@ -2709,7 +2782,7 @@ static int ravb_streaming_init(void)
 		INIT_LIST_HEAD(&hwq->completeWaitQueue);
 
 		/* device initialize */
-		dev = &(hwq->device);
+		dev = &hwq->device;
 		device_initialize(dev);
 		dev->parent = &stp->device;
 		dev->class = stp->avb_class;
@@ -2718,15 +2791,17 @@ static int ravb_streaming_init(void)
 		dev->groups = (hwq->tx) ?
 			hwq_sysfs_groups_tx : hwq_sysfs_groups_rx;
 		dev->release = hwq_dev_release;
-		dev_set_name(dev, (hwq->tx) ? "avb_tx%d" : "avb_rx%d",
-				hwq->index - (RAVB_HWQUEUE_TXNUM * !hwq->tx));
+		dev_set_name(dev,
+			     (hwq->tx) ? "avb_tx%d" : "avb_rx%d",
+			     hwq->index - (RAVB_HWQUEUE_TXNUM * !hwq->tx));
 		err = device_add(dev);
 		if (err)
 			goto err_inithwqueue;
 		hwq->device_add_flag = true;
 
-		hwq->attached = kset_create_and_add("attached", NULL,
-				&hwq->device.kobj);
+		hwq->attached = kset_create_and_add("attached",
+						    NULL,
+						    &hwq->device.kobj);
 		if (!hwq->attached) {
 			err = -ENOMEM;
 			goto err_inithwqueue;
@@ -2756,9 +2831,12 @@ static int ravb_streaming_init(void)
 			irq_name2 = devm_kasprintf(dev, GFP_KERNEL,
 						   "%s:%s:%s", ndev->name,
 						   irq_name, hwq_name(hwq));
-			err = devm_request_irq(dev, irq,
-					ravb_streaming_interrupt_rxtx,
-					0, irq_name2, hwq);
+			err = devm_request_irq(dev,
+					       irq,
+					       ravb_streaming_interrupt_rxtx,
+					       0,
+					       irq_name2,
+					       hwq);
 			if (err) {
 				pr_err("request_irq(%d,%s) error\n",
 				       irq, irq_name2);
@@ -2780,7 +2858,7 @@ err_inithwqueue:
 		if (hwq->attached)
 			kset_unregister(hwq->attached);
 		if (hwq->device_add_flag)
-			device_unregister(&(hwq->device));
+			device_unregister(&hwq->device);
 
 		if (hwq->ring) {
 			dma_free_coherent(pdev_dev,
@@ -2793,7 +2871,7 @@ err_inithwqueue:
 		hwq->ring_dma = 0;
 	}
 err_initirq:
-	device_unregister(&(stp->device));
+	device_unregister(&stp->device);
 err_initstp:
 	kmem_cache_destroy(streaming_entry_cache);
 err_initdevice:
@@ -2858,7 +2936,7 @@ static void ravb_streaming_cleanup(void)
 		if (hwq->attached)
 			kset_unregister(hwq->attached);
 		if (hwq->device_add_flag)
-			device_unregister(&(hwq->device));
+			device_unregister(&hwq->device);
 
 		if (hwq->ring) {
 			dma_free_coherent(pdev_dev,
@@ -2868,7 +2946,7 @@ static void ravb_streaming_cleanup(void)
 		}
 	}
 
-	device_unregister(&(stp->device));
+	device_unregister(&stp->device);
 	class_destroy(stp->avb_class);
 
 	/* destroy entry cache */

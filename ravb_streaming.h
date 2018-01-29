@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2017 Renesas Electronics Corporation
+ Copyright (C) 2014-2018 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
@@ -89,7 +89,7 @@
 
 /* CBS bandwidth acceptable limit */
 #define RAVB_CBS_BANDWIDTH_LIMIT \
-	((u64)((U32_MAX * 750000ull)/1000000ull)) /* 75% */
+	((u64)((U32_MAX * 750000ull) / 1000000ull)) /* 75% */
 
 /* transmit descriptor processed interrupt bit offset */
 #define TDP_BIT_OFFSET	16
@@ -223,6 +223,7 @@ struct stqueue_info {
 	struct eavb_entry ebuf[RAVB_ENTRY_THRETH];
 	bool cancel;
 };
+
 #define to_stq(x) container_of(x, struct stqueue_info, kobj)
 #define stq_name(x) kobject_name(&(x)->kobj)
 
@@ -265,6 +266,7 @@ struct hwqueue_info {
 	int irq;
 	int irq_coalesce_frame_count;
 };
+
 #define hwq_name(x) kobject_name(&(x)->device.kobj)
 
 /* structure of streaming API */
@@ -281,12 +283,13 @@ struct streaming_private {
 
 	struct list_head userpages;
 };
+
 #define to_stp(x) container_of(x, struct streaming_private, device)
 #define stp_name(x) kobject_name(&(x)->device.kobj)
 
 extern struct streaming_private *stp_ptr;
 
-extern int register_streamID(struct hwqueue_info *hwq, u8 streamID[8]);
-extern const char *avb_state_to_str(enum AVB_STATE state);
+int register_streamID(struct hwqueue_info *hwq, u8 streamID[8]);
+const char *avb_state_to_str(enum AVB_STATE state);
 
 #endif	/* #ifndef __RAVB_STREAMING_H__ */
