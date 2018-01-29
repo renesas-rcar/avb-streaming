@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2017 Renesas Electronics Corporation
+ Copyright (C) 2014-2018 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
@@ -2567,12 +2567,6 @@ static int ravb_streaming_init(void)
 	int irq;
 
 	pr_info("init: start(%s)\n", interface);
-
-	if (major < 0 || 4094 < major) {
-		pr_err("init: invalid module param major=%d, should be set range in 0, 1-4094\n",
-		       major);
-		return -EINVAL;
-	}
 
 	if (!ndev)
 		goto no_device;
