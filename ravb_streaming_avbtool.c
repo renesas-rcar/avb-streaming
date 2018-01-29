@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2016 Renesas Electronics Corporation
+ Copyright (C) 2014-2016,2018 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
@@ -70,7 +70,7 @@
  * correct statistics counter operations
  */
 static void correct_pstats_stp(struct stqueue_info *stq,
-		struct packet_stats *pstats)
+			       struct packet_stats *pstats)
 {
 	struct streaming_private *stp = stp_ptr;
 	struct hwqueue_info *hwq;
@@ -80,8 +80,8 @@ static void correct_pstats_stp(struct stqueue_info *stq,
 	memset(pstats, 0, sizeof(*pstats));
 
 	for (i = 0, hwq = stp->hwqueueInfoTable;
-			i < RAVB_HWQUEUE_NUM; i++, hwq++) {
-
+	     i < RAVB_HWQUEUE_NUM;
+	     i++, hwq++) {
 		pstats->rx_packets += hwq->pstats.rx_packets;
 		pstats->tx_packets += hwq->pstats.tx_packets;
 		pstats->rx_bytes += hwq->pstats.rx_bytes;
@@ -89,7 +89,7 @@ static void correct_pstats_stp(struct stqueue_info *stq,
 		pstats->rx_errors += hwq->pstats.rx_errors;
 		pstats->tx_errors += hwq->pstats.tx_errors;
 
-		list_for_each_entry(stq_kobj, &(hwq->attached->list), entry) {
+		list_for_each_entry(stq_kobj, &hwq->attached->list, entry) {
 			stq = to_stq(stq_kobj);
 			pstats->rx_packets += stq->pstats.rx_packets;
 			pstats->tx_packets += stq->pstats.tx_packets;
@@ -102,16 +102,16 @@ static void correct_pstats_stp(struct stqueue_info *stq,
 }
 
 static void correct_pstats(struct stqueue_info *stq,
-		struct packet_stats *pstats)
+			   struct packet_stats *pstats)
 {
 	if (!stq)
 		correct_pstats_stp(NULL, pstats);
 	else
-		memcpy(pstats, &(stq->pstats), sizeof(*pstats));
+		memcpy(pstats, &stq->pstats, sizeof(*pstats));
 }
 
 static void correct_dstats_stp(struct stqueue_info *stq,
-	struct driver_stats *dstats)
+			       struct driver_stats *dstats)
 {
 	struct streaming_private *stp = stp_ptr;
 	struct hwqueue_info *hwq;
@@ -121,8 +121,8 @@ static void correct_dstats_stp(struct stqueue_info *stq,
 	memset(dstats, 0, sizeof(*dstats));
 
 	for (i = 0, hwq = stp->hwqueueInfoTable;
-		i < RAVB_HWQUEUE_NUM; i++, hwq++) {
-
+	     i < RAVB_HWQUEUE_NUM;
+	     i++, hwq++) {
 		dstats->rx_interrupts += hwq->dstats.rx_interrupts;
 		dstats->tx_interrupts += hwq->dstats.tx_interrupts;
 		dstats->rx_current += hwq->dstats.rx_current;
@@ -130,7 +130,7 @@ static void correct_dstats_stp(struct stqueue_info *stq,
 		dstats->rx_dirty += hwq->dstats.rx_dirty;
 		dstats->tx_dirty += hwq->dstats.tx_dirty;
 
-		list_for_each_entry(stq_kobj, &(hwq->attached->list), entry) {
+		list_for_each_entry(stq_kobj, &hwq->attached->list, entry) {
 			stq = to_stq(stq_kobj);
 			dstats->rx_entry_wait += stq->dstats.rx_entry_wait;
 			dstats->tx_entry_wait += stq->dstats.tx_entry_wait;
@@ -141,13 +141,13 @@ static void correct_dstats_stp(struct stqueue_info *stq,
 }
 
 static void correct_dstats(struct stqueue_info *stq,
-	struct driver_stats *dstats)
+			   struct driver_stats *dstats)
 {
 	struct hwqueue_info *hwq;
 
-	if (!stq)
+	if (!stq) {
 		correct_dstats_stp(NULL, dstats);
-	else {
+	} else {
 		hwq = stq->hwq;
 		dstats->rx_interrupts = hwq->dstats.rx_interrupts;
 		dstats->tx_interrupts = hwq->dstats.tx_interrupts;
@@ -185,6 +185,7 @@ static const char ravb_avbtool_gstrings_stats[][EAVB_GSTRING_LEN] = {
 	"rx_entry_complete",
 	"tx_entry_complete",
 };
+
 #define EAVB_AVBTOOL_STATS_LEN	ARRAY_SIZE(ravb_avbtool_gstrings_stats)
 
 static long ravb_avbtool_get_drvinfo(struct file *file, unsigned long parm)
@@ -200,8 +201,9 @@ static long ravb_avbtool_get_drvinfo(struct file *file, unsigned long parm)
 
 	pr_debug("get_drvinfo:\n");
 
-	strlcpy(info.bus_info, dev_name(ndev->dev.parent),
-			sizeof(info.bus_info));
+	strlcpy(info.bus_info,
+		dev_name(ndev->dev.parent),
+		sizeof(info.bus_info));
 
 	if (copy_to_user(useraddr, &info, sizeof(info)))
 		return -EFAULT;
@@ -330,8 +332,9 @@ static long ravb_avbtool_get_strings(struct file *file, unsigned long parm)
 
 	switch (gstrings.string_set) {
 	case EAVB_SS_STATS:
-		memcpy(data, *ravb_avbtool_gstrings_stats,
-				sizeof(ravb_avbtool_gstrings_stats));
+		memcpy(data,
+		       *ravb_avbtool_gstrings_stats,
+		       sizeof(ravb_avbtool_gstrings_stats));
 		break;
 	}
 
@@ -410,7 +413,8 @@ static long ravb_avbtool_get_stats(struct file *file, unsigned long parm)
 }
 
 long ravb_streaming_ioctl_avbtool(struct file *file,
-		unsigned int cmd, unsigned long parm)
+				  unsigned int cmd,
+				  unsigned long parm)
 {
 	switch (cmd) {
 	case EAVB_GDRVINFO:

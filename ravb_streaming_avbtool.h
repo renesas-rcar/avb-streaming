@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2016 Renesas Electronics Corporation
+ Copyright (C) 2014-2016,2018 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
@@ -62,7 +62,8 @@
 #ifndef __RAVB_STREAMING_AVBTOOL_H__
 #define __RAVB_STREAMING_AVBTOOL_H__
 
-extern long ravb_streaming_ioctl_avbtool(struct file *file,
-		unsigned int cmd, unsigned long parm);
+long ravb_streaming_ioctl_avbtool(struct file *file,
+				  unsigned int cmd,
+				  unsigned long parm);
 
 #endif	/* __RAVB_STREAMING_AVBTOOL_H__ */
