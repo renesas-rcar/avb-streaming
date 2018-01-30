@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2016 Renesas Electronics Corporation
+ Copyright (C) 2014-2016,2018 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
@@ -104,11 +104,11 @@ static ssize_t stp_stats_##_name##_show(struct device *dev, \
 	for (i = 0, hwq = stp->hwqueueInfoTable; \
 			i < RAVB_HWQUEUE_NUM; i++, hwq++) { \
 		tmp += hwq->pstats._name; \
-		list_for_each_entry(stq_kobj, &(hwq->attached->list), entry) \
+		list_for_each_entry(stq_kobj, &hwq->attached->list, entry) \
 			tmp += to_stq(stq_kobj)->pstats._name; \
 	} \
 \
-	return snprintf(page, PAGE_SIZE-1, "%llu\n", tmp); \
+	return snprintf(page, PAGE_SIZE - 1, "%llu\n", tmp); \
 }
 
 #define STP_STATS_ATTR_RO(_name) \
@@ -160,7 +160,7 @@ static ssize_t hwq_##_name##_show(struct device *dev, \
 			   struct device_attribute *attr, char *page) \
 { \
 	struct hwqueue_info *hwq = dev_get_drvdata(dev); \
-	return snprintf(page, PAGE_SIZE-1, "%s\n", \
+	return snprintf(page, PAGE_SIZE - 1, "%s\n", \
 			(hwq->_name) ? "true" : "false"); \
 }
 
@@ -169,7 +169,7 @@ static ssize_t hwq_##_name##_show(struct device *dev, \
 			   struct device_attribute *attr, char *page) \
 { \
 	struct hwqueue_info *hwq = dev_get_drvdata(dev); \
-	return snprintf(page, PAGE_SIZE-1, "%d\n", hwq->_name); \
+	return snprintf(page, PAGE_SIZE - 1, "%d\n", hwq->_name); \
 }
 
 #define HWQ_ATTR_RO(_name) \
@@ -187,11 +187,12 @@ struct device_attribute hwq_##_name##_attribute = { \
 
 /* hwq basic attrs */
 static ssize_t hwq_state_show(struct device *dev,
-			   struct device_attribute *attr, char *page)
+			      struct device_attribute *attr,
+			      char *page)
 {
 	struct hwqueue_info *hwq = dev_get_drvdata(dev);
 
-	return snprintf(page, PAGE_SIZE-1, "%s\n",
+	return snprintf(page, PAGE_SIZE - 1, "%s\n",
 			(char *)avb_state_to_str(hwq->state));
 }
 
@@ -221,12 +222,13 @@ static struct attribute_group hwq_dev_basic_group = {
 
 /* hwq rx attrs */
 static ssize_t hwq_streamID_show(struct device *dev,
-			   struct device_attribute *attr, char *page)
+				 struct device_attribute *attr,
+				 char *page)
 {
 	struct hwqueue_info *hwq = dev_get_drvdata(dev);
 	u8 *streamID = hwq->streamID;
 
-	return snprintf(page, PAGE_SIZE-1,
+	return snprintf(page, PAGE_SIZE - 1,
 			"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
 			streamID[0], streamID[1], streamID[2], streamID[3],
 			streamID[4], streamID[5], streamID[6], streamID[7]);
@@ -243,8 +245,8 @@ static ssize_t hwq_streamID_store(struct device *dev,
 	int err = -EINVAL;
 
 	cnt = sscanf(buf, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-			&params[0], &params[1], &params[2], &params[3],
-			&params[4], &params[5], &params[6], &params[7]);
+		     &params[0], &params[1], &params[2], &params[3],
+		     &params[4], &params[5], &params[6], &params[7]);
 	if (cnt != 8)
 		goto out;
 
@@ -283,10 +285,10 @@ static ssize_t hwq_stats_##_name##_show(struct device *dev, \
 	struct kobject *stq_kobj; \
 \
 	tmp += hwq->pstats._name; \
-	list_for_each_entry(stq_kobj, &(hwq->attached->list), entry) \
+	list_for_each_entry(stq_kobj, &hwq->attached->list, entry) \
 		tmp += to_stq(stq_kobj)->pstats._name; \
 \
-	return snprintf(page, PAGE_SIZE-1, "%llu\n", tmp); \
+	return snprintf(page, PAGE_SIZE - 1, "%llu\n", tmp); \
 }
 
 #define HWQ_STATS_ATTR_RO(_name) \
@@ -343,11 +345,14 @@ const struct attribute_group *hwq_sysfs_groups_tx[] = {
 struct stq_attribute {
 	struct attribute attr;
 	ssize_t (*show)(struct stqueue_info *stq,
-			struct stq_attribute *attr, char *buf);
-	ssize_t (*store)(struct stqueue_info *stq,
 			struct stq_attribute *attr,
-			const char *buf, size_t count);
+			char *buf);
+	ssize_t (*store)(struct stqueue_info *stq,
+			 struct stq_attribute *attr,
+			 const char *buf,
+			 size_t count);
 };
+
 #define to_stq_attr(x) container_of(x, struct stq_attribute, attr)
 
 static ssize_t stq_attr_show(struct kobject *kobj,
@@ -383,7 +388,7 @@ const struct sysfs_ops stq_sysfs_ops = {
 static ssize_t stq_##_name##_show(struct stqueue_info *stq, \
 			   struct stq_attribute *attr, char *page) \
 { \
-	return snprintf(page, PAGE_SIZE-1, "%s\n", \
+	return snprintf(page, PAGE_SIZE - 1, "%s\n", \
 			(stq->_name) ? "true" : "false"); \
 }
 
@@ -391,13 +396,14 @@ static ssize_t stq_##_name##_show(struct stqueue_info *stq, \
 static ssize_t stq_##_name##_show(struct stqueue_info *stq, \
 			   struct stq_attribute *attr, char *page) \
 { \
-	return snprintf(page, PAGE_SIZE-1, "%d\n", stq->_name); \
+	return snprintf(page, PAGE_SIZE - 1, "%d\n", stq->_name); \
 }
 
 static ssize_t stq_state_show(struct stqueue_info *stq,
-			   struct stq_attribute *attr, char *page)
+			      struct stq_attribute *attr,
+			      char *page)
 {
-	return snprintf(page, PAGE_SIZE-1, "%s\n",
+	return snprintf(page, PAGE_SIZE - 1, "%s\n",
 			(char *)avb_state_to_str(stq->state));
 }
 
@@ -405,31 +411,13 @@ STQ_SHOW_INT(index);
 STQ_SHOW_INT(qno);
 
 static ssize_t stq_cbs_params_show(struct stqueue_info *stq,
-			   struct stq_attribute *attr, char *page)
+				   struct stq_attribute *attr,
+				   char *page)
 {
-#if 0
-#define GIGA 1000000000
-#define MEGA 1000000
-	u32 bandwidthFraction, idleSlope, sendSlope;
-
-	bandwidthFraction = (u32)div_u64(
-			(u64)stq->cbs.bandwidthFraction *
-			(u64)GIGA, U32_MAX) % GIGA;
-	idleSlope = (u32)div_u64(
-			(u64)stq->cbs.idleSlope *
-			(u64)MEGA, U16_MAX) % MEGA;
-	sendSlope = (u32)div_u64(
-			(u64)stq->cbs.sendSlope *
-			(u64)MEGA, U16_MAX) % MEGA;
-
-	return snprintf(page, PAGE_SIZE-1, "0.%09u +0.%06u -0.%06u\n",
-			bandwidthFraction, idleSlope, sendSlope);
-#else
-	return snprintf(page, PAGE_SIZE-1, "0x%08x +0x%04x -0x%04x\n",
+	return snprintf(page, PAGE_SIZE - 1, "0x%08x +0x%04x -0x%04x\n",
 			stq->cbs.bandwidthFraction,
 			stq->cbs.idleSlope,
 			stq->cbs.sendSlope);
-#endif
 }
 
 #define STQ_ATTR_RO(_name) \
@@ -470,7 +458,7 @@ struct attribute *stq_default_attrs_tx[] = {
 static ssize_t stq_stats_##_name##_show(struct stqueue_info *stq, \
 			   struct stq_attribute *attr, char *page) \
 { \
-	return snprintf(page, PAGE_SIZE-1, "%llu\n", stq->pstats._name); \
+	return snprintf(page, PAGE_SIZE - 1, "%llu\n", stq->pstats._name); \
 }
 
 #define STQ_STATS_ATTR_RO(_name) \
