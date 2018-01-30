@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2017 Renesas Electronics Corporation
+ Copyright (C) 2014-2018 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
@@ -326,8 +326,9 @@ static const char *query_tstamp_rx_ctrl(u32 rx_ctrl)
 		case RAVB_RXTSTAMP_TYPE_V2_L2_EVENT:    return ",V2L2";
 		default:                                return ",Unknown";
 		}
-	} else
+	} else {
 		return "";
+	}
 }
 
 /**
@@ -380,8 +381,8 @@ static void stats_collect_update(void)
 
 	/* Collect best effort/network control queue */
 	for (h = 0; h < 2; h++) {
-		stats = &(info->rx_stats[h]);
-		collect = &(stats->collect[RAVB_PROC_COLLECT_CURRENT]);
+		stats = &info->rx_stats[h];
+		collect = &stats->collect[RAVB_PROC_COLLECT_CURRENT];
 
 		collect->frames = priv->stats[h].rx_packets;
 		collect->bytes = priv->stats[h].rx_bytes;
@@ -389,8 +390,8 @@ static void stats_collect_update(void)
 			priv->stats[h].rx_over_errors +
 			priv->stats[h].rx_fifo_errors;
 
-		stats = &(info->tx_stats[h]);
-		collect = &(stats->collect[RAVB_PROC_COLLECT_CURRENT]);
+		stats = &info->tx_stats[h];
+		collect = &stats->collect[RAVB_PROC_COLLECT_CURRENT];
 
 		collect->frames = priv->stats[h].tx_packets;
 		collect->bytes = priv->stats[h].tx_bytes;
@@ -402,28 +403,28 @@ static void stats_collect_update(void)
 	for (h = 0; h < ARRAY_SIZE(stp->hwqueueInfoTable); h++) {
 		hwq = &stp->hwqueueInfoTable[h];
 		if (hwq->tx) {
-			stats = &(info->tx_stats[hwq->chno]);
-			collect = &(stats->collect[RAVB_PROC_COLLECT_CURRENT]);
+			stats = &info->tx_stats[hwq->chno];
+			collect = &stats->collect[RAVB_PROC_COLLECT_CURRENT];
 
 			collect->frames = hwq->pstats.tx_packets;
 			collect->bytes = hwq->pstats.tx_bytes;
 			collect->errors = hwq->pstats.tx_errors;
 
-			list_for_each_entry(stq_kobj, &(hwq->attached->list), entry) {
+			list_for_each_entry(stq_kobj, &hwq->attached->list, entry) {
 				stq = to_stq(stq_kobj);
 				collect->frames += stq->pstats.tx_packets;
 				collect->bytes += stq->pstats.tx_bytes;
 				collect->errors += stq->pstats.tx_errors;
 			}
 		} else {
-			stats = &(info->rx_stats[hwq->chno]);
-			collect = &(stats->collect[RAVB_PROC_COLLECT_CURRENT]);
+			stats = &info->rx_stats[hwq->chno];
+			collect = &stats->collect[RAVB_PROC_COLLECT_CURRENT];
 
 			collect->frames = hwq->pstats.rx_packets;
 			collect->bytes = hwq->pstats.rx_bytes;
 			collect->errors = hwq->pstats.rx_errors;
 
-			list_for_each_entry(stq_kobj, &(hwq->attached->list), entry) {
+			list_for_each_entry(stq_kobj, &hwq->attached->list, entry) {
 				stq = to_stq(stq_kobj);
 				collect->frames += stq->pstats.rx_packets;
 				collect->bytes += stq->pstats.rx_bytes;
@@ -465,23 +466,24 @@ static int stats_show_network(struct seq_file *m, void *v, bool tx)
 
 	for (a = 0; a < array_size; a++) {
 		if (tx) {
-			stats = &(info->tx_stats[a]);
+			stats = &info->tx_stats[a];
 			class_name = query_avb_tx_class(stats->u.tx_class);
 		} else {
-			stats = &(info->rx_stats[a]);
+			stats = &info->rx_stats[a];
 			class_name = query_avb_rx_class(stats->u.rx_class);
 		}
 
-		collect = &(stats->collect[RAVB_PROC_COLLECT_CURRENT]);
-		collect_prev = &(stats->collect[RAVB_PROC_COLLECT_PREV]);
+		collect = &stats->collect[RAVB_PROC_COLLECT_CURRENT];
+		collect_prev = &stats->collect[RAVB_PROC_COLLECT_PREV];
 
-		seq_printf(m, "%-5s %12llu %12llu %6llu  %9llu %9llu\n",
-			class_name,
-			collect->frames,
-			collect->bytes,
-			collect->errors,
-			collect_prev->frames_per_second,
-			collect_prev->bytes_per_second);
+		seq_printf(m,
+			   "%-5s %12llu %12llu %6llu  %9llu %9llu\n",
+			   class_name,
+			   collect->frames,
+			   collect->bytes,
+			   collect->errors,
+			   collect_prev->frames_per_second,
+			   collect_prev->bytes_per_second);
 
 		collect_total.frames            += collect->frames;
 		collect_total.bytes             += collect->bytes;
@@ -491,13 +493,13 @@ static int stats_show_network(struct seq_file *m, void *v, bool tx)
 	}
 
 	seq_printf(m,
-		"      ------------ ------------ ------ ---------- ---------\n"
-		"      %12llu %12llu %6llu  %9llu %9llu\n",
-		collect_total.frames,
-		collect_total.bytes,
-		collect_total.errors,
-		collect_total.frames_per_second,
-		collect_total.bytes_per_second);
+		   "      ------------ ------------ ------ ---------- ---------\n"
+		   "      %12llu %12llu %6llu  %9llu %9llu\n",
+		   collect_total.frames,
+		   collect_total.bytes,
+		   collect_total.errors,
+		   collect_total.frames_per_second,
+		   collect_total.bytes_per_second);
 
 	return 0;
 }
@@ -529,17 +531,17 @@ static int stats_show_network_phy(struct seq_file *m, void *v)
 	struct phy_device *phydev = ndev->phydev;
 
 	seq_printf(m,
-		"Link:      %s\n"
-		"Speed:     %u\n"
-		"Duplex:    %s\n"
-		"ID:        %u\n"
-		"Interface: %u (%s)\n",
-		priv->link ? "Up" : "Down",
-		priv->speed,
-		priv->duplex ? "Full" : "Half",
-		phydev->phy_id,
-		priv->phy_interface,
-		query_phy_interface(priv->phy_interface));
+		   "Link:      %s\n"
+		   "Speed:     %u\n"
+		   "Duplex:    %s\n"
+		   "ID:        %u\n"
+		   "Interface: %u (%s)\n",
+		   priv->link ? "Up" : "Down",
+		   priv->speed,
+		   priv->duplex ? "Full" : "Half",
+		   phydev->phy_id,
+		   priv->phy_interface,
+		   query_phy_interface(priv->phy_interface));
 
 	return 0;
 }
@@ -568,15 +570,15 @@ static int stats_show_hw_descriptors(struct seq_file *m, void *v)
 
 	/* Show best effort/network control tx queue */
 	for (h = 0; h < 2; h++)
-		seq_printf(m, HW_DESCRIPTORS_FORMAT,
-			query_avb_tx_class(h),
-			"Tx",
-			priv->num_tx_ring[h],
-			priv->cur_tx[h] - priv->dirty_tx[h],
-			priv->num_tx_ring[h] - (priv->cur_tx[h] - priv->dirty_tx[h]),
-			0, /* reserved */
-			(priv->cur_tx[h] - priv->dirty_tx[h]) ?
-				 "active" : "idle");
+		seq_printf(m,
+			   HW_DESCRIPTORS_FORMAT,
+			   query_avb_tx_class(h),
+			   "Tx",
+			   priv->num_tx_ring[h],
+			   priv->cur_tx[h] - priv->dirty_tx[h],
+			   priv->num_tx_ring[h] - (priv->cur_tx[h] - priv->dirty_tx[h]),
+			   0, /* reserved */
+			   (priv->cur_tx[h] - priv->dirty_tx[h]) ? "active" : "idle");
 
 	/* Show streaming tx queue */
 	for (h = 0; h < ARRAY_SIZE(stp->hwqueueInfoTable); h++) {
@@ -584,27 +586,28 @@ static int stats_show_hw_descriptors(struct seq_file *m, void *v)
 		if (!hwq->tx)
 			continue;
 
-		seq_printf(m, HW_DESCRIPTORS_FORMAT,
-			query_avb_tx_class(hwq->chno),
-			"Tx",
-			hwq->ringsize,
-			hwq->ringsize - hwq->remain,
-			hwq->remain,
-			hwq->minremain,
-			query_avb_state(hwq->state));
+		seq_printf(m,
+			   HW_DESCRIPTORS_FORMAT,
+			   query_avb_tx_class(hwq->chno),
+			   "Tx",
+			   hwq->ringsize,
+			   hwq->ringsize - hwq->remain,
+			   hwq->remain,
+			   hwq->minremain,
+			   query_avb_state(hwq->state));
 	}
 
 	/* Show best effort/network control rx queue */
 	for (h = 0; h < 2; h++)
-		seq_printf(m, HW_DESCRIPTORS_FORMAT,
-			query_avb_rx_class(h),
-			"Rx",
-			priv->num_rx_ring[h],
-			priv->cur_rx[h] - priv->dirty_rx[h],
-			priv->num_rx_ring[h] - (priv->cur_rx[h] - priv->dirty_rx[h]),
-			0, /* reserved */
-			(priv->cur_rx[h] - priv->dirty_rx[h]) ?
-				 "active" : "idle");
+		seq_printf(m,
+			   HW_DESCRIPTORS_FORMAT,
+			   query_avb_rx_class(h),
+			   "Rx",
+			   priv->num_rx_ring[h],
+			   priv->cur_rx[h] - priv->dirty_rx[h],
+			   priv->num_rx_ring[h] - (priv->cur_rx[h] - priv->dirty_rx[h]),
+			   0, /* reserved */
+			   (priv->cur_rx[h] - priv->dirty_rx[h]) ? "active" : "idle");
 
 	/* Show streaming rx queue */
 	for (h = 0; h < ARRAY_SIZE(stp->hwqueueInfoTable); h++) {
@@ -612,14 +615,15 @@ static int stats_show_hw_descriptors(struct seq_file *m, void *v)
 		if (hwq->tx)
 			continue;
 
-		seq_printf(m, HW_DESCRIPTORS_FORMAT,
-			query_avb_rx_class(hwq->chno),
-			"Rx",
-			hwq->ringsize,
-			hwq->ringsize - hwq->remain,
-			hwq->remain,
-			hwq->minremain,
-			query_avb_state(hwq->state));
+		seq_printf(m,
+			   HW_DESCRIPTORS_FORMAT,
+			   query_avb_rx_class(hwq->chno),
+			   "Rx",
+			   hwq->ringsize,
+			   hwq->ringsize - hwq->remain,
+			   hwq->remain,
+			   hwq->minremain,
+			   query_avb_state(hwq->state));
 	}
 
 	return 0;
@@ -649,19 +653,21 @@ static int stats_show_hw_filters(struct seq_file *m, void *v)
 		hwq = &stp->hwqueueInfoTable[h];
 
 		if (hwq->tx) {
-			seq_printf(m, "%-2u     Tx     %3u  %3u\n",
-				hwq->index,
-				hwq->qno,
-				hwq->chno);
+			seq_printf(m,
+				   "%-2u     Tx     %3u  %3u\n",
+				   hwq->index,
+				   hwq->qno,
+				   hwq->chno);
 		} else {
-			seq_printf(m, "%-2u     Rx     %3u  %3u  %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
-				hwq->index,
-				hwq->qno,
-				hwq->chno,
-				hwq->streamID[0], hwq->streamID[1],
-				hwq->streamID[2], hwq->streamID[3],
-				hwq->streamID[4], hwq->streamID[5],
-				hwq->streamID[6], hwq->streamID[7]);
+			seq_printf(m,
+				   "%-2u     Rx     %3u  %3u  %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
+				   hwq->index,
+				   hwq->qno,
+				   hwq->chno,
+				   hwq->streamID[0], hwq->streamID[1],
+				   hwq->streamID[2], hwq->streamID[3],
+				   hwq->streamID[4], hwq->streamID[5],
+				   hwq->streamID[6], hwq->streamID[7]);
 		}
 	}
 
@@ -686,13 +692,14 @@ static int stats_show_hw_cbs(struct seq_file *m, void *v)
 	 */
 	seq_puts(m, "Stream  Type Fraction IdleSlope SendSlope HiCredit LoCredit\n");
 	for (c = 0; c < ARRAY_SIZE(stp->cbsInfo.param); c++) {
-		seq_printf(m, "%-2u      Tx       %3lu%% %9u %9u %8u %8u\n",
-			c,
-			stp->cbsInfo.param[c].bandwidthFraction / (0xfffffffful / 100),
-			stp->cbsInfo.param[c].idleSlope,
-			-stp->cbsInfo.param[c].sendSlope,
-			stp->cbsInfo.param[c].hiCredit,
-			stp->cbsInfo.param[c].loCredit);
+		seq_printf(m,
+			   "%-2u      Tx       %3lu%% %9u %9u %8u %8u\n",
+			   c,
+			   stp->cbsInfo.param[c].bandwidthFraction / (0xfffffffful / 100),
+			   stp->cbsInfo.param[c].idleSlope,
+			   -stp->cbsInfo.param[c].sendSlope,
+			   stp->cbsInfo.param[c].hiCredit,
+			   stp->cbsInfo.param[c].loCredit);
 	}
 
 	return 0;
@@ -713,13 +720,11 @@ static int stats_show_hw_timestamp(struct seq_file *m, void *v)
 	 * RX  {setting, setting}
 	 */
 	seq_printf(m,
-		"Tx  %s\n"
-		"Rx  %s%s\n",
-		(priv->tstamp_tx_ctrl & RAVB_TXTSTAMP_ENABLED) ?
-			 "Enabled" : "Disabled",
-		(priv->tstamp_rx_ctrl & RAVB_RXTSTAMP_ENABLED) ?
-			 "Enabled" : "Disabled",
-		query_tstamp_rx_ctrl(priv->tstamp_rx_ctrl));
+		   "Tx  %s\n"
+		   "Rx  %s%s\n",
+		   (priv->tstamp_tx_ctrl & RAVB_TXTSTAMP_ENABLED) ? "Enabled" : "Disabled",
+		   (priv->tstamp_rx_ctrl & RAVB_RXTSTAMP_ENABLED) ? "Enabled" : "Disabled",
+		   query_tstamp_rx_ctrl(priv->tstamp_rx_ctrl));
 
 	return 0;
 }
@@ -776,9 +781,9 @@ static void proc_timer_update(unsigned long arg)
 	info->seconds++;
 
 	for (a = 0; a < ARRAY_SIZE(info->rx_stats); a++) {
-		stats = &(info->rx_stats[a]);
-		collect = &(stats->collect[RAVB_PROC_COLLECT_CURRENT]);
-		collect_prev = &(stats->collect[RAVB_PROC_COLLECT_PREV]);
+		stats = &info->rx_stats[a];
+		collect = &stats->collect[RAVB_PROC_COLLECT_CURRENT];
+		collect_prev = &stats->collect[RAVB_PROC_COLLECT_PREV];
 
 		collect->frames_per_second =
 			collect->frames - collect_prev->frames;
@@ -788,9 +793,9 @@ static void proc_timer_update(unsigned long arg)
 	}
 
 	for (a = 0; a < ARRAY_SIZE(info->tx_stats); a++) {
-		stats = &(info->tx_stats[a]);
-		collect = &(stats->collect[RAVB_PROC_COLLECT_CURRENT]);
-		collect_prev = &(stats->collect[RAVB_PROC_COLLECT_PREV]);
+		stats = &info->tx_stats[a];
+		collect = &stats->collect[RAVB_PROC_COLLECT_CURRENT];
+		collect_prev = &stats->collect[RAVB_PROC_COLLECT_PREV];
 
 		collect->frames_per_second =
 			collect->frames - collect_prev->frames;
@@ -804,7 +809,6 @@ static void proc_timer_update(unsigned long arg)
 	info->timer.expires += (unsigned long)HZ;
 	add_timer(&info->timer);
 }
-
 
 /**
  * @brief  Initialise a one second kernel timer
@@ -883,18 +887,20 @@ static void stats_create_proc_entry(void)
 
 	/* Create proc data entries */
 	for (i = 0; i < ARRAY_SIZE(proc_dir); i++) {
-		if ((proc_dir[i].debug == true) && (debug != true))
+		if (proc_dir[i].debug && !debug)
 			continue;
 
 		proc_dir_entry = proc_mkdir(proc_dir[i].name, stats_proc_root);
 		proc_data = proc_dir[i].data_entries;
 		for (j = 0; j < proc_dir[i].n_data; j++) {
-			if ((proc_data[j].debug == true) && (debug != true))
+			if (proc_data[j].debug && !debug)
 				continue;
 
 			proc_create_data(proc_data[j].name,
-					0, proc_dir_entry, &stats_proc_fops,
-					proc_data[j].show);
+					 0444,
+					 proc_dir_entry,
+					 &stats_proc_fops,
+					 proc_data[j].show);
 		}
 	}
 }
@@ -937,7 +943,8 @@ static int ravb_proc_init(void)
 		return -ENODEV;
 
 	stp_dev = device_find_child(ndev_dev,
-			"avb_ctrl", ravb_proc_match);
+				    "avb_ctrl",
+				    ravb_proc_match);
 	if (!stp_dev)
 		return -ENODEV;
 
@@ -949,7 +956,7 @@ static int ravb_proc_init(void)
 		return -ENODEV;
 
 	pr_info("found AVB device is %s@%s\n",
-			netdev_name(ndev), stp_name(stp));
+		netdev_name(ndev), stp_name(stp));
 
 	stats_create_proc_entry();
 	ravb_proc_info.ndev = ndev;
