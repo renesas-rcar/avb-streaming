@@ -1848,7 +1848,8 @@ static ssize_t ravb_streaming_write_stq(struct file *file,
 	ssize_t wsize;
 
 	stq->flags = file->f_flags;
-	num = count / sizeof(struct eavb_entry);
+	num = min_t(u32, (u32)(count / sizeof(struct eavb_entry)),
+		    RAVB_ENTRY_THRETH);
 	fraction = count % sizeof(struct eavb_entry);
 
 	pr_debug("write: %s < count=%zd, fraction=%d\n",
