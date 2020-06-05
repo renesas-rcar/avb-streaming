@@ -2643,7 +2643,7 @@ static int ravb_streaming_init(void)
 				pdev_dev);
 	if (!match) {
 		pr_err("unsupport network interface\n");
-		goto no_device;
+		goto no_device_match;
 	}
 
 	priv = netdev_priv(ndev);
@@ -2885,6 +2885,8 @@ no_class:
 	vfree(stp);
 	stp_ptr = NULL;
 no_memory:
+no_device_match:
+	dev_put(ndev);
 no_device:
 	stp_ptr = NULL;
 
