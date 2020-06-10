@@ -2963,6 +2963,8 @@ static void ravb_streaming_cleanup(void)
 
 	vfree(stp);
 
+	dev_put(ndev);
+
 	pr_info("cleanup: end\n");
 }
 
