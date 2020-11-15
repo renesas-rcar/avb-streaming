@@ -113,7 +113,7 @@
 static int major;
 module_param(major, int, 0440);
 
-static char *interface = "eth0";
+static char *interface;
 module_param(interface, charp, 0440);
 
 static int irq_timeout_usec_tx0;
@@ -2615,36 +2615,73 @@ static const struct of_device_id ravb_streaming_match_table[] = {
 };
 MODULE_DEVICE_TABLE(of, ravb_streaming_match_table);
 
+static inline bool match_dev(struct net_device *ndev)
+{
+	const struct of_device_id *match = NULL;
+
+	if (!ndev || !ndev->dev.parent)
+		return false;
+
+	/* check supported devices */
+	match = of_match_device(of_match_ptr(ravb_streaming_match_table),
+				ndev->dev.parent);
+
+	return match;
+}
+
 static int ravb_streaming_init(void)
 {
 	int err = -ENODEV;
 	int i;
-	struct net_device *ndev = dev_get_by_name(&init_net, interface);
+	struct net_device *ndev = NULL;
 	struct ravb_private *priv;
 	struct streaming_private *stp;
 	struct hwqueue_info *hwq;
 	struct ravb_desc *desc;
 	struct device *dev;
 	struct device *pdev_dev;
-	const struct of_device_id *match;
 	char taskname[32] = { '\0' };
 	const char *irq_name, *irq_name2;
 	int irq;
 
+	/*
+	 * Default behaviour is automatically detect the ravb interface
+	 * unless the user used (interface) parameter to explicitly
+	 * specify a network interface.
+	 */
+	if (!interface) {
+		pr_info("searching for ravb interface\n");
+		rcu_read_lock();
+		/* search for ravb interface */
+		for_each_netdev_rcu(&init_net, ndev) {
+			if (match_dev(ndev)) {
+				dev_hold(ndev);
+				interface = ndev->name;
+				break;
+			}
+		}
+		rcu_read_unlock();
+
+		if (!interface) {
+			pr_err("no supported network interfaces\n");
+			goto no_device;
+		}
+	} else {
+		pr_info("%s explicitly specified by user\n", interface);
+		ndev = dev_get_by_name(&init_net, interface);
+
+		if (!ndev)
+			goto no_device;
+
+		if (!match_dev(ndev)) {
+			pr_err("unsupport network interface\n");
+			goto no_device_match;
+		}
+	}
+
 	pr_info("init: start(%s)\n", interface);
 
-	if (!ndev)
-		goto no_device;
-
 	pdev_dev = ndev->dev.parent;
-
-	/* check supported devices */
-	match = of_match_device(of_match_ptr(ravb_streaming_match_table),
-				pdev_dev);
-	if (!match) {
-		pr_err("unsupport network interface\n");
-		goto no_device_match;
-	}
 
 	priv = netdev_priv(ndev);
 
