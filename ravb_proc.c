@@ -80,7 +80,7 @@
 #include "ravb_eavb.h"
 #include "ravb_streaming.h"
 
-static char *interface = "eth0";
+static char *interface;
 module_param(interface, charp, 0440);
 
 static bool debug;
@@ -924,6 +924,23 @@ static int ravb_proc_match(struct device *dev, void *data)
 }
 
 /**
+ * @brief  Check for supported device
+ */
+static inline bool match_dev(struct net_device *ndev, struct device **rstp_dev)
+{
+	struct device *stp_dev;
+
+	if (!ndev)
+		return false;
+
+	stp_dev = device_find_child(&ndev->dev, "avb_ctrl", ravb_proc_match);
+	if (stp_dev && rstp_dev)
+		*rstp_dev = stp_dev;
+
+	return stp_dev;
+}
+
+/**
  * @brief  Initialise /proc
  */
 static int ravb_proc_init(void)
@@ -931,19 +948,36 @@ static int ravb_proc_init(void)
 	int err = -ENODEV;
 	struct net_device *ndev;
 	struct streaming_private *stp;
-	struct device *stp_dev;
+	struct device *stp_dev = NULL;
 
 	pr_info("init enter\n");
 
-	ndev = dev_get_by_name(&init_net, interface);
-	if (!ndev)
-		goto no_device;
+	/*
+	 * Default behavior is automatically detect the ravb interface
+	 * unless the user used (interface) parameter to explicitly
+	 * specify a network interface.
+	 */
+	if (!interface) {
+		rcu_read_lock();
+		/* search for ravb interface */
+		for_each_netdev_rcu(&init_net, ndev) {
+			if (match_dev(ndev, &stp_dev)) {
+				dev_hold(ndev);
+				interface = ndev->name;
+				break;
+			}
+		}
+		rcu_read_unlock();
+		if (!interface)
+			goto no_device;
+	} else {
+		ndev = dev_get_by_name(&init_net, interface);
+		if (!ndev)
+			goto no_device;
 
-	stp_dev = device_find_child(&ndev->dev,
-				    "avb_ctrl",
-				    ravb_proc_match);
-	if (!stp_dev)
-		goto no_device_match;
+		if (!match_dev(ndev, &stp_dev))
+			goto no_device_match;
+	}
 
 	stp = to_stp(stp_dev);
 
