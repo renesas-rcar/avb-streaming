@@ -928,6 +928,7 @@ static int ravb_proc_match(struct device *dev, void *data)
  */
 static int ravb_proc_init(void)
 {
+	int err = -ENODEV;
 	struct net_device *ndev;
 	struct streaming_private *stp;
 	struct device *stp_dev;
@@ -936,18 +937,18 @@ static int ravb_proc_init(void)
 
 	ndev = dev_get_by_name(&init_net, interface);
 	if (!ndev)
-		return -ENODEV;
+		goto no_device;
 
 	stp_dev = device_find_child(&ndev->dev,
 				    "avb_ctrl",
 				    ravb_proc_match);
 	if (!stp_dev)
-		return -ENODEV;
+		goto no_device_match;
 
 	stp = to_stp(stp_dev);
 
 	if (!try_module_get(stp->cdev.owner))
-		return -ENODEV;
+		goto no_device_match;
 
 	pr_info("found AVB device is %s@%s\n",
 		netdev_name(ndev), stp_name(stp));
@@ -960,6 +961,12 @@ static int ravb_proc_init(void)
 	pr_info("init finish\n");
 
 	return 0;
+
+no_device_match:
+	dev_put(ndev);
+no_device:
+	pr_info("init failed\n");
+	return err;
 }
 
 /**
