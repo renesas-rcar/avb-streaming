@@ -979,6 +979,7 @@ static void ravb_proc_cleanup(void)
 	del_timer(&ravb_proc_info.timer);
 	stats_remove_proc_entry();
 	module_put(ravb_proc_info.stp->cdev.owner);
+	dev_put(ravb_proc_info.ndev);
 
 	pr_info("cleanup finish\n");
 }
