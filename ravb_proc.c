@@ -930,7 +930,7 @@ static int ravb_proc_init(void)
 {
 	struct net_device *ndev;
 	struct streaming_private *stp;
-	struct device *ndev_dev, *stp_dev;
+	struct device *stp_dev;
 
 	pr_info("init enter\n");
 
@@ -938,19 +938,13 @@ static int ravb_proc_init(void)
 	if (!ndev)
 		return -ENODEV;
 
-	ndev_dev = &ndev->dev;
-	if (!ndev_dev)
-		return -ENODEV;
-
-	stp_dev = device_find_child(ndev_dev,
+	stp_dev = device_find_child(&ndev->dev,
 				    "avb_ctrl",
 				    ravb_proc_match);
 	if (!stp_dev)
 		return -ENODEV;
 
 	stp = to_stp(stp_dev);
-	if (!stp)
-		return -ENODEV;
 
 	if (!try_module_get(stp->cdev.owner))
 		return -ENODEV;
