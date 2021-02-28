@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2018 Renesas Electronics Corporation
+ Copyright (C) 2014-2018,2020-2021 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
