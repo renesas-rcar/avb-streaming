@@ -88,6 +88,7 @@
 #include <linux/poll.h>
 #include <linux/vmalloc.h>
 #include <linux/kthread.h>
+#include <uapi/linux/sched/types.h>
 #include <linux/semaphore.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
@@ -130,6 +131,10 @@ module_param(irq_coalesce_frame_tx, int, 0660);
 
 static int irq_coalesce_frame_rx;
 module_param(irq_coalesce_frame_rx, int, 0660);
+
+static int rt_prio;
+module_param(rt_prio, int, 0440);
+MODULE_PARM_DESC(rt_prio, "apply RT priority to worker thread (1-99) or do NOT apply RT priority (0)");
 
 struct streaming_private *stp_ptr;
 static struct kmem_cache *streaming_entry_cache;
@@ -2856,6 +2861,18 @@ static int ravb_streaming_init(void)
 			err = PTR_ERR_OR_ZERO(stp->avb_class);
 			hwq->task = NULL;
 			goto err_inithwqueue;
+		}
+
+		/* rt priority needed? */
+		if (rt_prio > 0) {
+			struct sched_param param = { 0 };
+
+			if (rt_prio > (MAX_RT_PRIO - 1)) {
+				pr_warn("limit rt_prio %d to max %d\n", rt_prio, MAX_RT_PRIO - 1);
+				rt_prio = MAX_RT_PRIO - 1;
+			}
+			param.sched_priority = rt_prio;
+			sched_setscheduler(hwq->task, SCHED_FIFO, &param);
 		}
 
 		hrtimer_init(&hwq->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
