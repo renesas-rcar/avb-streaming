@@ -533,12 +533,10 @@ static int stats_show_network_phy(struct seq_file *m, void *v)
 	seq_printf(m,
 		   "Link:      %s\n"
 		   "Speed:     %u\n"
-		   "Duplex:    %s\n"
 		   "ID:        %u\n"
 		   "Interface: %u (%s)\n",
 		   priv->link ? "Up" : "Down",
 		   priv->speed,
-		   priv->duplex ? "Full" : "Half",
 		   phydev->phy_id,
 		   priv->phy_interface,
 		   query_phy_interface(priv->phy_interface));
@@ -752,11 +750,11 @@ static int stats_proc_open(struct inode *inode, struct file *file)
 	return single_open(file, PDE_DATA(inode), NULL);
 }
 
-static const struct file_operations stats_proc_fops = {
-	.open		= stats_proc_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= single_release,
+static const struct proc_ops stats_proc_fops = {
+	.proc_open              = stats_proc_open,
+	.proc_read              = seq_read,
+	.proc_lseek             = seq_lseek,
+	.proc_release			= single_release,
 };
 
 /**
@@ -764,9 +762,9 @@ static const struct file_operations stats_proc_fops = {
  *
  * @param  arg     Pointer to ravb_proc_info in which created the timer
  */
-static void proc_timer_update(unsigned long arg)
+static void proc_timer_update(struct timer_list *arg)
 {
-	struct ravb_proc_info_t *info = (struct ravb_proc_info_t *)arg;
+	struct ravb_proc_info_t *info = from_timer(info, arg, timer);
 	struct ravb_proc_stats_t *stats;
 	struct ravb_proc_stats_collect_t *collect_prev;
 	struct ravb_proc_stats_collect_t *collect;
@@ -818,13 +816,8 @@ static void proc_timer_initialise(void)
 {
 	struct ravb_proc_info_t *info = &ravb_proc_info;
 
-	/* fill the data for our timer function */
-	init_timer(&info->timer);
-
-	/* register the timer */
-	info->timer.data     = (unsigned long)info;
-	info->timer.function = proc_timer_update;
-	info->timer.expires  = jiffies + (unsigned long)HZ;
+	timer_setup(&info->timer, proc_timer_update, 0);
+	mod_timer(&info->timer, (jiffies + (unsigned long)HZ));
 
 	add_timer(&info->timer);
 }

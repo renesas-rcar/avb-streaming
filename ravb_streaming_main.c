@@ -400,7 +400,7 @@ static struct ravb_user_page *get_userpage(void)
 	userpage = vzalloc(sizeof(*userpage));
 	if (unlikely(!userpage))
 		goto err_alloc;
-	page = alloc_page(GFP_KERNEL | GFP_DMA | __GFP_COLD);
+	page = alloc_page(GFP_KERNEL | GFP_DMA);
 	if (unlikely(!page))
 		goto err_allocpage;
 	page_dma = dma_map_page(pdev_dev, page, 0, PAGE_SIZE, DMA_FROM_DEVICE);
@@ -1924,7 +1924,11 @@ static void ravb_streaming_vm_close(struct vm_area_struct *vma)
 }
 
 #if KERNEL_VERSION(4, 10, 0) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(5, 10, 0) <= LINUX_VERSION_CODE
+static vm_fault_t ravb_streaming_vm_fault(struct vm_fault *vmf)
+#else
 static int ravb_streaming_vm_fault(struct vm_fault *vmf)
+#endif
 #else
 static int ravb_streaming_vm_fault(struct vm_area_struct *area,
 				   struct vm_fault *vmf)
@@ -2076,7 +2080,7 @@ static long ravb_map_page_compat(struct file *file, unsigned long parm)
 	if (ret)
 		return ret;
 
-	if (!access_ok(VERIFY_READ, pdma, sizeof(*pdma)))
+	if (!access_ok(pdma, sizeof(*pdma)))
 		goto failed;
 	if (__get_user(dma32.dma_paddr, &pdma->dma_paddr) ||
 	    __get_user(dma_vaddr, &pdma->dma_vaddr) ||
@@ -2103,7 +2107,7 @@ static long ravb_unmap_page_compat(struct file *file, unsigned long parm)
 		return -EFAULT;
 
 	pdma = compat_alloc_user_space(sizeof(*pdma));
-	if (!access_ok(VERIFY_WRITE, pdma, sizeof(*pdma)))
+	if (!access_ok(pdma, sizeof(*pdma)))
 		return -EFAULT;
 	if (__put_user(dma32.dma_paddr, &pdma->dma_paddr) ||
 	    __put_user((void __user *)(unsigned long)dma32.dma_vaddr,
@@ -2696,7 +2700,7 @@ static int ravb_streaming_init(void)
 	/* create class */
 	stp->avb_class = class_create(THIS_MODULE, "avb");
 	if (IS_ERR(stp->avb_class)) {
-		err = PTR_RET(stp->avb_class);
+		err = PTR_ERR_OR_ZERO(stp->avb_class);
 		pr_err("init: failed to create avb class\n");
 		goto no_class;
 	}
@@ -2849,7 +2853,7 @@ static int ravb_streaming_init(void)
 		hwq->task = kthread_run(ravb_hwq_task, hwq, taskname);
 		if (IS_ERR(hwq->task)) {
 			pr_err("init: cannot run AVB streaming task\n");
-			err = PTR_RET(hwq->task);
+			err = PTR_ERR_OR_ZERO(stp->avb_class);
 			hwq->task = NULL;
 			goto err_inithwqueue;
 		}
