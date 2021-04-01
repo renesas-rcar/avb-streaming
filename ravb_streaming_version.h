@@ -1,7 +1,7 @@
 /*************************************************************************/ /*
  avb-streaming
 
- Copyright (C) 2014-2018 Renesas Electronics Corporation
+ Copyright (C) 2014-2018,2021 Renesas Electronics Corporation
 
  License        Dual MIT/GPLv2
 
@@ -63,6 +63,6 @@
 #define __RAVB_STREAMING_VERSION_H__
 
 #define DRIVER "ravb-streaming"
-#define DRIVER_VERSION "R-Car v2.15.0"
+#define DRIVER_VERSION "R-Car v2.17.0"
 
 #endif	/* __RAVB_STREAMING_VERSION_H__ */
