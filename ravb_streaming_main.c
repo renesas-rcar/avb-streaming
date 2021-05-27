@@ -132,9 +132,9 @@ module_param(irq_coalesce_frame_tx, int, 0660);
 static int irq_coalesce_frame_rx;
 module_param(irq_coalesce_frame_rx, int, 0660);
 
-static int rt_prio;
-module_param(rt_prio, int, 0440);
-MODULE_PARM_DESC(rt_prio, "apply RT priority to worker thread (1-99) or do NOT apply RT priority (0)");
+static int avb_rt_prio;
+module_param(avb_rt_prio, int, 0440);
+MODULE_PARM_DESC(avb_rt_prio, "apply RT priority to worker thread (1-99) or do NOT apply RT priority (0)");
 
 struct streaming_private *stp_ptr;
 static struct kmem_cache *streaming_entry_cache;
@@ -2864,15 +2864,20 @@ static int ravb_streaming_init(void)
 		}
 
 		/* rt priority needed? */
-		if (rt_prio > 0) {
+		if (avb_rt_prio > 0) {
 			struct sched_param param = { 0 };
 
-			if (rt_prio > (MAX_RT_PRIO - 1)) {
-				pr_warn("limit rt_prio %d to max %d\n", rt_prio, MAX_RT_PRIO - 1);
-				rt_prio = MAX_RT_PRIO - 1;
+			if (avb_rt_prio > (MAX_RT_PRIO - 1)) {
+				pr_warn("limit avb_rt_prio %d to max %d\n", avb_rt_prio, MAX_RT_PRIO - 1);
+				avb_rt_prio = MAX_RT_PRIO - 1;
 			}
-			param.sched_priority = rt_prio;
-			sched_setscheduler(hwq->task, SCHED_FIFO, &param);
+			param.sched_priority = avb_rt_prio;
+			if ((MAX_RT_PRIO / 2) == param.sched_priority)
+				sched_set_fifo (hwq->task);
+			else if (1 == param.sched_priority)
+				sched_set_fifo_low (hwq->task);
+			else
+				sched_set_normal (hwq->task, MAX_NICE);
 		}
 
 		hrtimer_init(&hwq->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
