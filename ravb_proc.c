@@ -817,7 +817,7 @@ static void proc_timer_initialise(void)
 	struct ravb_proc_info_t *info = &ravb_proc_info;
 
 	timer_setup(&info->timer, proc_timer_update, 0);
-	mod_timer(&info->timer, (jiffies + (unsigned long)HZ));
+	info->timer.expires  = jiffies + (unsigned long)HZ;
 
 	add_timer(&info->timer);
 }
