@@ -2885,19 +2885,14 @@ static int ravb_streaming_init(void)
 
 		/* rt priority needed? */
 		if (avb_rt_prio > 0) {
-			struct sched_param param = { 0 };
-
 			if (avb_rt_prio > (MAX_RT_PRIO - 1)) {
 				pr_warn("limit avb_rt_prio %d to max %d\n", avb_rt_prio, MAX_RT_PRIO - 1);
 				avb_rt_prio = MAX_RT_PRIO - 1;
 			}
-			param.sched_priority = avb_rt_prio;
-			if ((MAX_RT_PRIO / 2) == param.sched_priority)
+			if (avb_rt_prio >= (MAX_RT_PRIO / 2))
 				sched_set_fifo (hwq->task);
-			else if (1 == param.sched_priority)
-				sched_set_fifo_low (hwq->task);
 			else
-				sched_set_normal (hwq->task, MAX_NICE);
+				sched_set_fifo_low (hwq->task);
 		}
 
 		hrtimer_init(&hwq->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
