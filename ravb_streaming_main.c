@@ -107,6 +107,7 @@
 
 #define AVB_CTRL_MINOR (127)
 #define AVB_MINOR_RANGE (AVB_CTRL_MINOR + 1)
+#define UNLOAD_TIMEOUT (500000)
 
 /**
  * global parameters
@@ -2431,12 +2432,18 @@ static int ravb_hwq_task(void *param)
 
 		/* unload event */
 		if (hwq->pendingEvents & AVB_EVENT_UNLOAD) {
+			int timeout_index = 0;
 			avb_down(&hwq->sem, hwq->index, -1);
 			/* terminate hardware queue */
 			hwq->defunct = 1;
 			hwq_task_process_terminate(hwq);
 			hwq->defunct = 0;
 			avb_up(&hwq->sem, hwq->index, -1);
+			while (!kthread_should_stop()) {
+				timeout_index++;
+				if (timeout_index > UNLOAD_TIMEOUT)
+					break;
+			}
 			break;
 		}
 
@@ -2930,8 +2937,10 @@ static int ravb_streaming_init(void)
 err_inithwqueue:
 	for (i = 0; i < RAVB_HWQUEUE_NUM; i++) {
 		hwq = &stp->hwqueueInfoTable[i];
-		if (hwq->task)
+		if (hwq->task) {
+			hwq_event(hwq, AVB_EVENT_UNLOAD, -1);
 			kthread_stop(hwq->task);
+		}
 		if (hwq->attached)
 			kset_unregister(hwq->attached);
 		if (hwq->device_add_flag)
