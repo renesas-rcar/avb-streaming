@@ -139,7 +139,7 @@ MODULE_PARM_DESC(avb_rt_prio, "apply RT priority to worker thread (1-99) or do N
 
 static int irq_tx_tail;
 module_param(irq_tx_tail, int, 0440);
-MODULE_PARM_DESC(irq_tx_tail, "Enable TX IRQ only for the last descriptor in a chain");
+MODULE_PARM_DESC(irq_tx_tail, "Enable TX IRQ optimization");
 
 struct streaming_private *stp_ptr;
 static struct kmem_cache *streaming_entry_cache;
@@ -582,8 +582,8 @@ static int desc_pre_encode(struct stream_entry *e, bool tx)
 }
 
 /* Caller must check remain */
-static struct ravb_desc *desc_copy(struct hwqueue_info *hwq,
-				   struct stream_entry *e)
+static void desc_copy(struct hwqueue_info *hwq, struct stream_entry *e,
+					   bool irq_enable)
 {
 	struct ravb_desc *desc = NULL;
 	dma_addr_t desc_dma;
@@ -603,7 +603,7 @@ static struct ravb_desc *desc_copy(struct hwqueue_info *hwq,
 		if (hwq->irq_coalesce_frame_count) {
 			hwq->irq_coalesce_frame_count--;
 		} else {
-			if (!irq_tx_tail)
+			if (!hwq->tx || !irq_tx_tail || irq_enable)
 				e->pre_enc[i].die_dt |= DESC_DIE_DPF_01;
 			hwq->irq_coalesce_frame_count = irq_coalesce_frame;
 		}
@@ -637,8 +637,6 @@ static struct ravb_desc *desc_copy(struct hwqueue_info *hwq,
 		hwq->dstats.tx_current += dstats_current;
 	else
 		hwq->dstats.rx_current += dstats_current;
-
-	return (!irq_tx_tail && irq_coalesce_frame) ? NULL : desc;
 }
 
 static bool desc_decode_rx(struct hwqueue_info *hwq, struct stream_entry *e)
@@ -2289,7 +2287,7 @@ static int hwq_task_process_encode(struct hwqueue_info *hwq)
 	struct stream_entry *e;
 	struct streaming_private *stp = stp_ptr;
 	struct net_device *ndev = to_net_dev(stp->device.parent);
-	struct ravb_desc *tail = NULL;
+	bool irq_enable = false;
 
 	while (hwq->remain >= EAVB_ENTRYVECNUM &&
 	       !list_empty(&hwq->activeStreamQueue)) {
@@ -2300,7 +2298,15 @@ static int hwq_task_process_encode(struct hwqueue_info *hwq)
 				     struct stream_entry,
 				     list);
 
-		tail = desc_copy(hwq, e);
+		if (irq_enable)
+			pr_err("Unexpected loop continuation...\n");
+
+		if ((list_is_last(&stq->list, &hwq->activeStreamQueue) &&
+		     list_is_last(&e->list, &stq->entryWaitQueue)) ||
+		     hwq->remain < e->vecsize + EAVB_ENTRYVECNUM)
+			irq_enable = true;
+
+		desc_copy(hwq, e, irq_enable);
 		trace_avb_entry_encode(e);
 		list_move_tail(&e->list, &hwq->completeWaitQueue);
 		stq->entrynum.processed++;
@@ -2317,10 +2323,6 @@ static int hwq_task_process_encode(struct hwqueue_info *hwq)
 			list_move_tail(&stq->list, &hwq->activeStreamQueue);
 		}
 	}
-
-	/* Activate interrupt for the last descriptor in the chain */
-	if (tail)
-		tail->die_dt |= DESC_DIE_DPF_01;
 
 	if (hwq->tx) {
 		/* transmission start request */
