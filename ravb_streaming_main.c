@@ -2075,6 +2075,7 @@ static long ravb_streaming_ioctl_stp(struct file *file,
 	case EAVB_GSTATS:
 		return ravb_streaming_ioctl_avbtool(file, cmd, parm);
 	default:
+		pr_err("incorrect %s call, cmd %u\n", __func__, cmd);
 		return -EINVAL;
 	}
 }
@@ -2115,6 +2116,7 @@ static long ravb_streaming_ioctl_stq(struct file *file,
 	case EAVB_GSTATS:
 		return ravb_streaming_ioctl_avbtool(file, cmd, parm);
 	default:
+		pr_err("incorrect %s call, cmd %u\n", __func__, cmd);
 		return -EINVAL;
 	}
 }
