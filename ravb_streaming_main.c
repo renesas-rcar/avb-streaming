@@ -2986,7 +2986,7 @@ no_device_match:
 no_device:
 	stp_ptr = NULL;
 
-	pr_info("init: failed\n");
+	pr_err("init: failed, err=%d\n", err);
 
 	return err;
 }
