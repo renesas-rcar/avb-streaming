@@ -1663,8 +1663,10 @@ static int ravb_streaming_read_stq_kernel(void *handle,
 			stq->waitEvent,
 			is_readable_count(stq, num) || stq->cancel,
 			hwq->index, stq->qno);
-		if (err < 0)
+		if (err < 0) {
+			pr_err("%s: failed to wait, err=%d\n", __func__, err);
 			return -EINTR;
+		}
 
 		avb_down(&hwq->sem, hwq->index, stq->qno);
 	}
@@ -1793,8 +1795,10 @@ static int ravb_streaming_write_stq_kernel(void *handle,
 			stq->waitEvent,
 			is_writeble(stq) || stq->cancel,
 			hwq->index, stq->qno);
-		if (err < 0)
+		if (err < 0) {
+			pr_err("%s: failed to wait, err=%d\n", __func__, err);
 			return -EINTR;
+		}
 
 		avb_down(&hwq->sem, hwq->index, stq->qno);
 	}
