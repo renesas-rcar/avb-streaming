@@ -303,6 +303,10 @@ static long ravb_avbtool_get_sset_count(struct file *file, unsigned long parm)
 
 out:
 	kfree(info_buf);
+
+	if (err)
+		pr_err("%s failure, err=%ld\n", __func__, err);
+
 	return err;
 }
 
@@ -349,6 +353,10 @@ static long ravb_avbtool_get_strings(struct file *file, unsigned long parm)
 
 out:
 	kfree(data);
+
+	if (err)
+		pr_err("%s failure, err=%ld\n", __func__, err);
+
 	return err;
 }
 
@@ -409,6 +417,10 @@ static long ravb_avbtool_get_stats(struct file *file, unsigned long parm)
 
  out:
 	kfree(data);
+
+	if (err)
+		pr_err("%s failure, err=%ld\n", __func__, err);
+
 	return err;
 }
 
