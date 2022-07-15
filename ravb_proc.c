@@ -59,6 +59,9 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */ /*************************************************************************/
 
+#undef pr_fmt
+#define pr_fmt(fmt) KBUILD_MODNAME "/" fmt
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
