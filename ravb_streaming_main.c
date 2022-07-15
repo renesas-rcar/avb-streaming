@@ -1000,6 +1000,8 @@ static struct stqueue_info *get_stq(struct hwqueue_info *hwq, int index)
 no_kobj:
 	kobject_put(&stq->kobj);
 no_memory:
+	pr_err("failed to get stqueue info\n");
+
 	return NULL;
 }
 
@@ -1229,6 +1231,9 @@ static long ravb_set_rxparam_kernel(void *handle, struct eavb_rxparam *rxparam)
 		 rxparam->streamid[4], rxparam->streamid[5],
 		 rxparam->streamid[6], rxparam->streamid[7]);
 
+	if (ret)
+		pr_err("failed to register stream ID, err=%d\n", ret);
+
 	return ret;
 }
 
@@ -1457,6 +1462,8 @@ static long ravb_map_page(struct file *file, unsigned long parm)
 	return 0;
 
 failed:
+	pr_err("%s failed, err=%ld\n", __func__, err);
+
 	return err;
 }
 
@@ -2168,6 +2175,8 @@ static long ravb_map_page_compat(struct file *file, unsigned long parm)
 
 failed:
 	ravb_unmap_page(file, (unsigned long)(pdma));
+	pr_err("%s failed\n", __func__);
+
 	return -EFAULT;
 }
 
