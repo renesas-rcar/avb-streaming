@@ -1484,12 +1484,14 @@ int ravb_streaming_open_stq_kernel(enum AVB_DEVNAME dev_name,
 	qno = find_first_zero_bit(hwq->stream_map, n_queues);
 	if (!(qno < n_queues)) {
 		avb_up(&hwq->sem, hwq->index, -1);
+		pr_err("too many queues, qno=%d, n_queues=%d\n", qno, n_queues);
 		return -EBUSY;
 	}
 
 	stq = get_stq(hwq, qno);
 	if (!stq) {
 		avb_up(&hwq->sem, hwq->index, -1);
+		pr_err("failed to get stq info\n");
 		return -ENOMEM;
 	}
 
@@ -1723,8 +1725,10 @@ static ssize_t ravb_streaming_read_stq(struct file *file,
 	pr_debug("read: %s < count=%zd, fraction=%d\n",
 		 stq_name(stq), count, fraction);
 
-	if (fraction)
+	if (fraction) {
+		pr_err("incorrect data size: %u\n", fraction);
 		return -EINVAL;
+	}
 
 	num = ravb_streaming_read_stq_kernel(stq, stq->ebuf, num);
 	if (num <= 0)
@@ -1867,8 +1871,10 @@ static ssize_t ravb_streaming_write_stq(struct file *file,
 	pr_debug("write: %s < count=%zd, fraction=%d\n",
 		 stq_name(stq), count, fraction);
 
-	if (fraction)
+	if (fraction) {
+		pr_err("incorrect data size: %u\n", fraction);
 		return -EINVAL;
+	}
 
 	ret = copy_from_user(stq->ebuf, buf,
 			     num * sizeof(struct eavb_entry));
@@ -2792,8 +2798,10 @@ static int ravb_streaming_init(void)
 	dev_set_name(dev, "avb_ctrl");
 
 	err = device_add(dev);
-	if (err)
+	if (err) {
+		pr_err("init: failed to add device, err=%d\n", err);
 		goto err_initstp;
+	}
 
 	if (priv->chip_id == RCAR_GEN2) {
 		err = devm_request_irq(dev,
@@ -2864,8 +2872,10 @@ static int ravb_streaming_init(void)
 			     (hwq->tx) ? "avb_tx%d" : "avb_rx%d",
 			     hwq->index - (RAVB_HWQUEUE_TXNUM * !hwq->tx));
 		err = device_add(dev);
-		if (err)
+		if (err) {
+			pr_err("init: failed to add hwqueue device %d, err=%d\n", i, err);
 			goto err_inithwqueue;
+		}
 		hwq->device_add_flag = true;
 
 		hwq->attached = kset_create_and_add("attached",
