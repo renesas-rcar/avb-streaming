@@ -992,7 +992,7 @@ static int ravb_proc_init(void)
 no_device_match:
 	dev_put(ndev);
 no_device:
-	pr_info("init failed\n");
+	pr_err("init failed, error=%d\n", err);
 	return err;
 }
 
