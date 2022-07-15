@@ -1019,11 +1019,15 @@ static long ravb_get_entrynum_kernel(void *handle,
 {
 	struct stqueue_info *stq = handle;
 
-	if (!stq)
+	if (!stq) {
+		pr_err("%s failure: stq is null\n", __func__);
 		return -EINVAL;
+	}
 
-	if (!entrynum)
+	if (!entrynum) {
+		pr_err("%s failure: entrynum is null\n", __func__);
 		return -EINVAL;
+	}
 
 	*entrynum = stq->entrynum;
 
@@ -1039,8 +1043,10 @@ static long ravb_get_linkspeed(void *handle)
 	struct net_device *ndev;
 	struct ravb_private *priv;
 
-	if (!stq)
+	if (!stq) {
+		pr_err("%s failure: stq is null\n", __func__);
 		return -EINVAL;
+	}
 
 	hwq = stq->hwq;
 	stp = to_stp(hwq->device.parent);
@@ -1066,8 +1072,10 @@ static long ravb_blocking_cancel_kernel(void *handle)
 	struct stqueue_info *stq = handle;
 	struct hwqueue_info *hwq;
 
-	if (!stq)
+	if (!stq) {
+		pr_err("%s failure: stq is null\n", __func__);
 		return -EINVAL;
+	}
 
 	hwq = stq->hwq;
 	if (!(stq->flags & O_NONBLOCK)) {
@@ -1087,17 +1095,25 @@ static long ravb_set_txparam_kernel(void *handle, struct eavb_txparam *txparam)
 	struct stqueue_info *stq = handle;
 	u64 bw;
 
-	if (!stq)
+	if (!stq) {
+		pr_err("%s failure: stq is null\n", __func__);
 		return -EINVAL;
+	}
 
-	if (!txparam)
+	if (!txparam) {
+		pr_err("%s failure: txparam is null\n", __func__);
 		return -EINVAL;
+	}
 
-	if (!stq->hwq->tx)
+	if (!stq->hwq->tx) {
+		pr_err("%s failure: not permitted for rx\n", __func__);
 		return -EPERM;
+	}
 
-	if (stq->state != AVB_STATE_IDLE)
+	if (stq->state != AVB_STATE_IDLE) {
+		pr_err("%s failure: state is not idle: %d\n", __func__, stq->state);
 		return -EBUSY;
+	}
 
 	pr_debug("set_txparam: %s %08x %08x %08x\n",
 		 stq_name(stq),
@@ -1113,6 +1129,7 @@ static long ravb_set_txparam_kernel(void *handle, struct eavb_txparam *txparam)
 
 	if (bw > RAVB_CBS_BANDWIDTH_LIMIT) {
 		avb_up(&stp->sem, -1, -1);
+		pr_err("%s failure: bandwidth limit, bw=%llu\n",  __func__, bw);
 		return -ENOSPC;
 	}
 
@@ -1141,14 +1158,20 @@ static long ravb_get_txparam_kernel(void *handle, struct eavb_txparam *txparam)
 {
 	struct stqueue_info *stq = handle;
 
-	if (!stq)
+	if (!stq) {
+		pr_err("%s failure: stq is null\n", __func__);
 		return -EINVAL;
+	}
 
-	if (!txparam)
+	if (!txparam) {
+		pr_err("%s failure: txparam is null\n", __func__);
 		return -EINVAL;
+	}
 
-	if (!stq->hwq->tx)
+	if (!stq->hwq->tx) {
+		pr_err("%s failure: not permitted for rx\n", __func__);
 		return -EPERM;
+	}
 
 	pr_debug("get_txparam: %s\n", stq_name(stq));
 
@@ -1180,14 +1203,20 @@ static long ravb_set_rxparam_kernel(void *handle, struct eavb_rxparam *rxparam)
 	struct stqueue_info *stq = handle;
 	int ret;
 
-	if (!stq)
+	if (!stq) {
+		pr_err("%s failure: stq is null\n", __func__);
 		return -EINVAL;
+	}
 
-	if (!rxparam)
+	if (!rxparam) {
+		pr_err("%s failure: rxparam is null\n", __func__);
 		return -EINVAL;
+	}
 
-	if (stq->hwq->tx)
+	if (stq->hwq->tx) {
+		pr_err("%s failure: not permitted for tx\n", __func__);
 		return -EPERM;
+	}
 
 	avb_down(&stp->sem, -1, -1);
 	ret = register_streamID(stq->hwq, rxparam->streamid);
@@ -1219,14 +1248,20 @@ static long ravb_get_rxparam_kernel(void *handle, struct eavb_rxparam *rxparam)
 {
 	struct stqueue_info *stq = handle;
 
-	if (!stq)
+	if (!stq) {
+		pr_err("%s failure: stq is null\n", __func__);
 		return -EINVAL;
+	}
 
-	if (!rxparam)
+	if (!rxparam) {
+		pr_err("%s failure: rxparam is null\n", __func__);
 		return -EINVAL;
+	}
 
-	if (stq->hwq->tx)
+	if (stq->hwq->tx) {
+		pr_err("%s failure: not permitted for tx\n", __func__);
 		return -EPERM;
+	}
 
 	pr_debug("get_rxparam: %s\n", stq_name(stq));
 
@@ -1276,11 +1311,15 @@ static long ravb_set_option_kernel(void *handle, struct eavb_option *option)
 {
 	struct stqueue_info *stq = handle;
 
-	if (!stq)
+	if (!stq) {
+		pr_err("%s failure: stq is null\n", __func__);
 		return -EINVAL;
+	}
 
-	if (!option)
+	if (!option) {
+		pr_err("%s failure: option is null\n", __func__);
 		return -EINVAL;
+	}
 
 	pr_debug("set_option: %s %d %08x\n",
 		 stq_name(stq), option->id, option->param);
@@ -1293,6 +1332,7 @@ static long ravb_set_option_kernel(void *handle, struct eavb_option *option)
 			stq->blockmode = option->param;
 			break;
 		default:
+			pr_err("%s failure: wrong option ID: %d\n", __func__, option->id);
 			return -EINVAL;
 		}
 		break;
@@ -1319,17 +1359,22 @@ static long ravb_get_option_kernel(void *handle, struct eavb_option *option)
 {
 	struct stqueue_info *stq = handle;
 
-	if (!stq)
+	if (!stq) {
+		pr_err("%s failure: stq is null\n", __func__);
 		return -EINVAL;
+	}
 
-	if (!option)
+	if (!option) {
+		pr_err("%s failure: option is null\n", __func__);
 		return -EINVAL;
+	}
 
 	switch (option->id) {
 	case EAVB_OPTIONID_BLOCKMODE:
 		option->param = stq->blockmode;
 		break;
 	default:
+		pr_err("%s failure: wrong option ID\n", __func__);
 		return -EINVAL;
 	}
 
@@ -1470,12 +1515,16 @@ int ravb_streaming_open_stq_kernel(enum AVB_DEVNAME dev_name,
 	struct stqueue_info *stq;
 	int index, qno, n_queues;
 
-	if (!kif)
+	if (!kif) {
+		pr_err("%s failure: kif is null\n", __func__);
 		return -EINVAL;
+	}
 
 	index = dev_name;
-	if (index >= RAVB_HWQUEUE_NUM || index < 0)
+	if (index >= RAVB_HWQUEUE_NUM || index < 0) {
+		pr_err("%s failure: invalid index: %d\n", __func__, index);
 		return -ENODEV;
+	}
 
 	hwq = &stp->hwqueueInfoTable[index];
 	n_queues = (hwq->tx) ? RAVB_STQUEUE_NUM : 1;
