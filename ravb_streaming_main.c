@@ -1096,6 +1096,7 @@ static long ravb_set_txparam_kernel(void *handle, struct eavb_txparam *txparam)
 	struct streaming_private *stp = stp_ptr;
 	struct stqueue_info *stq = handle;
 	u64 bw;
+	struct hwqueue_info *hwq;
 
 	if (!stq) {
 		pr_err("%s failure: stq is null\n", __func__);
@@ -1113,10 +1114,34 @@ static long ravb_set_txparam_kernel(void *handle, struct eavb_txparam *txparam)
 	}
 
 	if (stq->state != AVB_STATE_IDLE) {
-		pr_err("%s failure: state is not idle: %d\n", __func__, stq->state);
+		pr_debug("%s state is not idle: %d\n", __func__, stq->state);
+	}
+	/**
+	 * if ACTIVE or WAITCOMPLETE,
+	 * wait complete all entry processed.
+	 */
+	hwq = stq->hwq;
+	avb_down(&hwq->sem, hwq->index, stq->qno);
+	switch (stq->state) {
+	case AVB_STATE_ACTIVE:
+	case AVB_STATE_WAITCOMPLETE:
+		avb_up(&hwq->sem, hwq->index, stq->qno);
+		trace_avb_wait_sleep(hwq->index, stq->qno);
+		while (wait_event_interruptible(stq->waitEvent,
+						stq->state == AVB_STATE_IDLE));
+		avb_down(&hwq->sem, hwq->index, stq->qno);
+		pr_debug("%s state: %d\n", __func__, stq->state);
+		break;
+	default:
+		break;
+	}
+	if (stq->state != AVB_STATE_IDLE) {
+		pr_err("%s failure: state is still not idle: %d\n", __func__, stq->state);
+		avb_up(&hwq->sem, hwq->index, stq->qno);
 		return -EBUSY;
 	}
 
+	avb_up(&hwq->sem, hwq->index, stq->qno);
 	pr_debug("set_txparam: %s %08x %08x %08x\n",
 		 stq_name(stq),
 		 txparam->cbs.bandwidthFraction,
