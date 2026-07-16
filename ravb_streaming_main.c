@@ -668,7 +668,7 @@ static bool desc_decode_rx(struct hwqueue_info *hwq, struct stream_entry *e)
 		case DT_FSINGLE:
 		case DT_FEND:
 			progress = false;
-			/* fallthrough */
+			fallthrough;
 		case DT_FSTART:
 		case DT_FMID:
 			put_desc(hwq, desc);
@@ -825,6 +825,7 @@ static inline void unregister_cbs_param(enum eavb_streamclass class,
 static int separation_filter_initialise(struct net_device *ndev)
 {
 	struct ravb_private *priv = netdev_priv(ndev);
+	const struct ravb_hw_info *info = priv->info;
 	u32 csr_ops;
 
 	csr_ops = ravb_read(ndev, CSR) & CSR_OPS;
@@ -835,7 +836,8 @@ static int separation_filter_initialise(struct net_device *ndev)
 		ravb_write(ndev, 0xffffffff, SFM0);
 		ravb_write(ndev, 0xffffffff, SFM1);
 	} else if (csr_ops == CSR_OPS_OPERATION) {
-		if (priv->chip_id == RCAR_GEN2)
+		/*Use multi_irq to distinguish between Gen2 and Gen3*/
+		if (!info->multi_irqs)
 			return -EBUSY;
 
 		/* Separation Filter Offset(OPERATION MODE) */
@@ -944,13 +946,13 @@ static void stq_release(struct kobject *kobj)
 static struct kobj_type stq_ktype_rx = {
 	.sysfs_ops = &stq_sysfs_ops,
 	.release = stq_release,
-	.default_attrs = stq_default_attrs_rx,
+	.default_groups = stq_default_attrs_rx,
 };
 
 static struct kobj_type stq_ktype_tx = {
 	.sysfs_ops = &stq_sysfs_ops,
 	.release = stq_release,
-	.default_attrs = stq_default_attrs_tx,
+	.default_groups = stq_default_attrs_tx,
 };
 
 static struct stqueue_info *get_stq(struct hwqueue_info *hwq, int index)
@@ -2179,7 +2181,7 @@ static long ravb_map_page_compat(struct file *file, unsigned long parm)
 	struct eavb_dma_alloc __user *pdma;
 	void __user *dma_vaddr;
 
-	pdma = compat_alloc_user_space(sizeof(*pdma));
+	pdma = kmalloc(sizeof(*pdma), GFP_USER);
 
 	ret = ravb_map_page(file, (unsigned long)(pdma));
 	if (ret)
@@ -2213,7 +2215,7 @@ static long ravb_unmap_page_compat(struct file *file, unsigned long parm)
 	if (copy_from_user(&dma32, (void __user *)parm, sizeof(dma32)))
 		return -EFAULT;
 
-	pdma = compat_alloc_user_space(sizeof(*pdma));
+	pdma = kmalloc(sizeof(*pdma), GFP_USER);
 	if (!access_ok(pdma, sizeof(*pdma)))
 		return -EFAULT;
 	if (__put_user(dma32.dma_paddr, &pdma->dma_paddr) ||
@@ -2277,8 +2279,9 @@ static inline int ravb_enable_interrupt(struct net_device *ndev,
 					struct hwqueue_info *hwq)
 {
 	struct ravb_private *priv = netdev_priv(ndev);
-
-	if (priv->chip_id == RCAR_GEN3) {
+	const struct ravb_hw_info *info = priv->info;
+	/*Use multi_irq to distinguish between Gen2 and Gen3*/
+	if (info->multi_irqs) {
 		if (hwq->tx)
 			ravb_write(ndev, BIT(hwq->chno + TDP_BIT_OFFSET), TIE);
 		else
@@ -2297,8 +2300,9 @@ static inline int ravb_disable_interrupt(struct net_device *ndev,
 					 struct hwqueue_info *hwq)
 {
 	struct ravb_private *priv = netdev_priv(ndev);
-
-	if (priv->chip_id == RCAR_GEN3) {
+	const struct ravb_hw_info *info = priv->info;
+	/*Use multi_irq to distinguish between Gen2 and Gen3*/
+	if (info->multi_irqs) {
 		if (hwq->tx)
 			ravb_write(ndev, BIT(hwq->chno + TDP_BIT_OFFSET), TID);
 		else
@@ -2550,12 +2554,12 @@ static int ravb_hwq_task(void *param)
 		case AVB_STATE_IDLE:
 			if (list_empty(&hwq->activeStreamQueue))
 				break;
-			/* fall through */
+			fallthrough;
 		case AVB_STATE_WAITCOMPLETE:
 			/* disable interrupt */
 			ravb_disable_interrupt(ndev, hwq);
 			hwq_sequencer(hwq, AVB_STATE_ACTIVE);
-			/* fall through */
+			fallthrough;
 		case AVB_STATE_ACTIVE:
 			/* TODO implement SW scheduler */
 			do {
@@ -2733,10 +2737,8 @@ static const char *ravb_streaming_irqs[RAVB_HWQUEUE_NUM] = {
 };
 
 static const struct of_device_id ravb_streaming_match_table[] = {
-	{ .compatible = "renesas,etheravb-rcar-gen2",
-	  .data = (void *)RCAR_GEN2 },
-	{ .compatible = "renesas,etheravb-rcar-gen3",
-	  .data = (void *)RCAR_GEN3 },
+	{ .compatible = "renesas,etheravb-rcar-gen2" },
+	{ .compatible = "renesas,etheravb-rcar-gen3" },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, ravb_streaming_match_table);
@@ -2761,6 +2763,7 @@ static int ravb_streaming_init(void)
 	int i;
 	struct net_device *ndev = NULL;
 	struct ravb_private *priv;
+	const struct ravb_hw_info *info;
 	struct streaming_private *stp;
 	struct hwqueue_info *hwq;
 	struct ravb_desc *desc;
@@ -2810,6 +2813,7 @@ static int ravb_streaming_init(void)
 	pdev_dev = ndev->dev.parent;
 
 	priv = netdev_priv(ndev);
+	info = priv->info;
 
 	err = -ENOMEM;
 
@@ -2891,8 +2895,8 @@ static int ravb_streaming_init(void)
 		pr_err("init: failed to add device, err=%d\n", err);
 		goto err_initstp;
 	}
-
-	if (priv->chip_id == RCAR_GEN2) {
+	/*Use multi_irq to distinguish between Gen2 and Gen3*/
+	if (!info->multi_irqs) {
 		err = devm_request_irq(dev,
 				       ndev->irq,
 				       ravb_streaming_interrupt,
@@ -2998,8 +3002,8 @@ static int ravb_streaming_init(void)
 
 		hrtimer_init(&hwq->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 		hwq->timer.function = ravb_streaming_timer_handler;
-
-		if (priv->chip_id == RCAR_GEN3) {
+		/*Use multi_irq to distinguish between Gen2 and Gen3*/
+		if (info->multi_irqs) {
 			irq_name = ravb_streaming_irqs[i];
 			irq = platform_get_irq_byname(priv->pdev, irq_name);
 			if (irq < 0) {

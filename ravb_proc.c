@@ -750,7 +750,7 @@ static int stats_show_driver_userpages(struct seq_file *m, void *v)
 
 static int stats_proc_open(struct inode *inode, struct file *file)
 {
-	return single_open(file, PDE_DATA(inode), NULL);
+	return single_open(file, pde_data(inode), NULL);
 }
 
 static const struct proc_ops stats_proc_fops = {

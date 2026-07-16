@@ -439,18 +439,36 @@ static STQ_ATTR_RO(qno);
 /* for Tx stream */
 static STQ_ATTR_RO(cbs_params);
 
-struct attribute *stq_default_attrs_rx[] = {
+struct attribute *stq_attrs_rx[] = {
 	&stq_index_attribute.attr,
 	&stq_state_attribute.attr,
 	&stq_qno_attribute.attr,
 	NULL,
 };
 
-struct attribute *stq_default_attrs_tx[] = {
+const struct attribute_group stq_group_rx = {
+	.attrs = stq_attrs_rx,
+};
+
+const struct attribute_group *stq_default_attrs_rx[] = {
+	&stq_group_rx,
+	NULL,
+};
+
+struct attribute *stq_attrs_tx[] = {
 	&stq_index_attribute.attr,
 	&stq_state_attribute.attr,
 	&stq_qno_attribute.attr,
 	&stq_cbs_params_attribute.attr,
+	NULL,
+};
+
+const struct attribute_group stq_group_tx = {
+	.attrs = stq_attrs_tx,
+};
+
+const struct attribute_group *stq_default_attrs_tx[] = {
+	&stq_group_tx,
 	NULL,
 };
 

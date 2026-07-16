@@ -77,8 +77,8 @@ extern const struct attribute_group *hwq_sysfs_groups_tx[];
  * stream queue info sysfs operations
  */
 extern const struct sysfs_ops stq_sysfs_ops;
-extern struct attribute *stq_default_attrs_rx[];
-extern struct attribute *stq_default_attrs_tx[];
+extern const struct attribute_group *stq_default_attrs_rx[];
+extern const struct attribute_group  *stq_default_attrs_tx[];
 extern struct attribute_group stq_dev_stat_group;
 
 #endif	/* #ifndef __RAVB_STREAMING_SYSFS_H__ */
