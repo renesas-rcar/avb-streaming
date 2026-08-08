@@ -8,6 +8,7 @@
 struct eavb_entryvec {
 	uint32_t base;
 	uint32_t len;
+	void *vaddr;
 };
 
 struct eavb_entry {
